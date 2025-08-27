@@ -72,7 +72,7 @@ export default function LandingPage() {
       </section>
 
       {/* Features Section */}
-      <section className="py-20 bg-card/30">
+      <section id="features" className="py-20 bg-card/30">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold font-montserrat mb-4">
@@ -83,94 +83,63 @@ export default function LandingPage() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <Card className="border-2 border-primary/10 hover:border-primary/30 transition-colors">
-              <CardHeader>
-                <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4">
-                  <Sparkles className="w-6 h-6 text-primary" />
-                </div>
-                <CardTitle className="font-montserrat">
-                  AI Content Generation
-                </CardTitle>
-                <CardDescription>
-                  Generate captions, hashtags, and visuals from simple ideas
-                  using advanced AI
-                </CardDescription>
-              </CardHeader>
-            </Card>
-
-            <Card className="border-2 border-secondary/10 hover:border-secondary/30 transition-colors">
-              <CardHeader>
-                <div className="w-12 h-12 bg-secondary/10 rounded-lg flex items-center justify-center mb-4">
-                  <Globe className="w-6 h-6 text-secondary" />
-                </div>
-                <CardTitle className="font-montserrat">
-                  Bilingual Support
-                </CardTitle>
-                <CardDescription>
-                  Create content in both English and Amharic with cultural
-                  context understanding
-                </CardDescription>
-              </CardHeader>
-            </Card>
-
-            <Card className="border-2 border-accent/10 hover:border-accent/30 transition-colors">
-              <CardHeader>
-                <div className="w-12 h-12 bg-accent/10 rounded-lg flex items-center justify-center mb-4">
-                  <Clock className="w-6 h-6 text-accent" />
-                </div>
-                <CardTitle className="font-montserrat">
-                  Smart Scheduling
-                </CardTitle>
-                <CardDescription>
-                  Schedule posts for optimal engagement times with Ethiopian
-                  audience insights
-                </CardDescription>
-              </CardHeader>
-            </Card>
-
-            <Card className="border-2 border-primary/10 hover:border-primary/30 transition-colors">
-              <CardHeader>
-                <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4">
-                  <Palette className="w-6 h-6 text-primary" />
-                </div>
-                <CardTitle className="font-montserrat">Brand Presets</CardTitle>
-                <CardDescription>
-                  Save your brand colors, fonts, and style preferences for
-                  consistent content
-                </CardDescription>
-              </CardHeader>
-            </Card>
-
-            <Card className="border-2 border-secondary/10 hover:border-secondary/30 transition-colors">
-              <CardHeader>
-                <div className="w-12 h-12 bg-secondary/10 rounded-lg flex items-center justify-center mb-4">
-                  <Video className="w-6 h-6 text-secondary" />
-                </div>
-                <CardTitle className="font-montserrat">
-                  Multi-Platform
-                </CardTitle>
-                <CardDescription>
-                  Optimized content for Instagram posts, stories, and TikTok
-                  videos
-                </CardDescription>
-              </CardHeader>
-            </Card>
-
-            <Card className="border-2 border-accent/10 hover:border-accent/30 transition-colors">
-              <CardHeader>
-                <div className="w-12 h-12 bg-accent/10 rounded-lg flex items-center justify-center mb-4">
-                  <Users className="w-6 h-6 text-accent" />
-                </div>
-                <CardTitle className="font-montserrat">
-                  Ethiopian Focus
-                </CardTitle>
-                <CardDescription>
-                  Built specifically for Ethiopian businesses with local market
-                  understanding
-                </CardDescription>
-              </CardHeader>
-            </Card>
+          {/* Mobile: horizontal scroll | Desktop: grid */}
+          <div className="flex gap-6 overflow-x-auto snap-x snap-mandatory md:grid md:grid-cols-2 lg:grid-cols-3 md:gap-8 md:overflow-visible">
+            {[
+              {
+                icon: <Sparkles className="w-6 h-6 text-primary" />,
+                title: "AI Content Generation",
+                desc: "Generate captions, hashtags, and visuals from simple ideas using advanced AI",
+                color: "primary",
+              },
+              {
+                icon: <Globe className="w-6 h-6 text-secondary" />,
+                title: "Bilingual Support",
+                desc: "Create content in both English and Amharic with cultural context understanding",
+                color: "secondary",
+              },
+              {
+                icon: <Clock className="w-6 h-6 text-accent" />,
+                title: "Smart Scheduling",
+                desc: "Schedule posts for optimal engagement times with Ethiopian audience insights",
+                color: "accent",
+              },
+              {
+                icon: <Palette className="w-6 h-6 text-primary" />,
+                title: "Brand Presets",
+                desc: "Save your brand colors, fonts, and style preferences for consistent content",
+                color: "primary",
+              },
+              {
+                icon: <Video className="w-6 h-6 text-secondary" />,
+                title: "Multi-Platform",
+                desc: "Optimized content for Instagram posts, stories, and TikTok videos",
+                color: "secondary",
+              },
+              {
+                icon: <Users className="w-6 h-6 text-accent" />,
+                title: "Ethiopian Focus",
+                desc: "Built specifically for Ethiopian businesses with local market understanding",
+                color: "accent",
+              },
+            ].map((feature, i) => (
+              <Card
+                key={i}
+                className={`border-2 border-${feature.color}/10 hover:border-${feature.color}/30 transition-colors min-w-[280px] snap-center`}
+              >
+                <CardHeader>
+                  <div
+                    className={`w-12 h-12 bg-${feature.color}/10 rounded-lg flex items-center justify-center mb-4`}
+                  >
+                    {feature.icon}
+                  </div>
+                  <CardTitle className="font-montserrat">
+                    {feature.title}
+                  </CardTitle>
+                  <CardDescription>{feature.desc}</CardDescription>
+                </CardHeader>
+              </Card>
+            ))}
           </div>
         </div>
       </section>
