@@ -2,7 +2,6 @@
 import { Button } from "@/app/components/button";
 import {
   Card,
-  CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
@@ -15,13 +14,57 @@ import {
   Clock,
   Palette,
   Users,
-  CheckCircle,
   ArrowRight,
 } from "lucide-react";
 import Header from "./components/HomeHeader";
 import Footer from "./components/Footer";
 
 export default function LandingPage() {
+  const features = [
+    {
+      icon: <Sparkles className="w-6 h-6 text-primary" />,
+      title: "AI Content Generation",
+      desc: "Generate captions, hashtags, and visuals from simple ideas using advanced AI",
+      border: "border-primary/10 hover:border-primary/30",
+      bg: "bg-primary/10",
+    },
+    {
+      icon: <Globe className="w-6 h-6 text-secondary" />,
+      title: "Bilingual Support",
+      desc: "Create content in both English and Amharic with cultural context understanding",
+      border: "border-secondary/10 hover:border-secondary/30",
+      bg: "bg-secondary/10",
+    },
+    {
+      icon: <Clock className="w-6 h-6 text-accent" />,
+      title: "Smart Scheduling",
+      desc: "Schedule posts for optimal engagement times with Ethiopian audience insights",
+      border: "border-accent/10 hover:border-accent/30",
+      bg: "bg-accent/10",
+    },
+    {
+      icon: <Palette className="w-6 h-6 text-primary" />,
+      title: "Brand Presets",
+      desc: "Save your brand colors, fonts, and style preferences for consistent content",
+      border: "border-primary/10 hover:border-primary/30",
+      bg: "bg-primary/10",
+    },
+    {
+      icon: <Video className="w-6 h-6 text-secondary" />,
+      title: "Multi-Platform",
+      desc: "Optimized content for Instagram posts, stories, and TikTok videos",
+      border: "border-secondary/10 hover:border-secondary/30",
+      bg: "bg-secondary/10",
+    },
+    {
+      icon: <Users className="w-6 h-6 text-accent" />,
+      title: "Ethiopian Focus",
+      desc: "Built specifically for Ethiopian businesses with local market understanding",
+      border: "border-accent/10 hover:border-accent/30",
+      bg: "bg-accent/10",
+    },
+  ];
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -85,51 +128,20 @@ export default function LandingPage() {
 
           {/* Mobile: horizontal scroll | Desktop: grid */}
           <div className="flex gap-6 overflow-x-auto snap-x snap-mandatory md:grid md:grid-cols-2 lg:grid-cols-3 md:gap-8 md:overflow-visible">
-            {[
-              {
-                icon: <Sparkles className="w-6 h-6 text-primary" />,
-                title: "AI Content Generation",
-                desc: "Generate captions, hashtags, and visuals from simple ideas using advanced AI",
-                color: "primary",
-              },
-              {
-                icon: <Globe className="w-6 h-6 text-secondary" />,
-                title: "Bilingual Support",
-                desc: "Create content in both English and Amharic with cultural context understanding",
-                color: "secondary",
-              },
-              {
-                icon: <Clock className="w-6 h-6 text-accent" />,
-                title: "Smart Scheduling",
-                desc: "Schedule posts for optimal engagement times with Ethiopian audience insights",
-                color: "accent",
-              },
-              {
-                icon: <Palette className="w-6 h-6 text-primary" />,
-                title: "Brand Presets",
-                desc: "Save your brand colors, fonts, and style preferences for consistent content",
-                color: "primary",
-              },
-              {
-                icon: <Video className="w-6 h-6 text-secondary" />,
-                title: "Multi-Platform",
-                desc: "Optimized content for Instagram posts, stories, and TikTok videos",
-                color: "secondary",
-              },
-              {
-                icon: <Users className="w-6 h-6 text-accent" />,
-                title: "Ethiopian Focus",
-                desc: "Built specifically for Ethiopian businesses with local market understanding",
-                color: "accent",
-              },
-            ].map((feature, i) => (
+            {features.map((feature, i) => (
               <Card
                 key={i}
-                className={`border-2 border-${feature.color}/10 hover:border-${feature.color}/30 transition-colors min-w-[280px] snap-center`}
+                className={`
+                  border-2 ${feature.border}
+                  transition-colors min-w-[280px] snap-center
+                `}
               >
                 <CardHeader>
                   <div
-                    className={`w-12 h-12 bg-${feature.color}/10 rounded-lg flex items-center justify-center mb-4`}
+                    className={`
+                      w-12 h-12 ${feature.bg}
+                      rounded-lg flex items-center justify-center mb-4
+                    `}
                   >
                     {feature.icon}
                   </div>
@@ -168,7 +180,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Footer */}
       <Footer />
     </div>
   );
