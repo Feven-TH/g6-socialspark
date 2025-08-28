@@ -1,11 +1,12 @@
 from fastapi import FastAPI
-from api.routers import captions, images, videos, schedule
+from delivery.api.routers import captions, images, videos, schedule
 
 
 def create_app():
     app = FastAPI(title="SocialSpark")
 
     # Register routers
+    app.include_router(videos.router, prefix="", tags=["videos"])
 
     return app
 
