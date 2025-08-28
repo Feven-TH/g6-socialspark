@@ -6,7 +6,7 @@
   /* Updated to use correct Primary Deep Blue #0D2A4B */
   --background: #f7f9fb; /* Background #F7F9FB */
   --foreground: #0d2a4b; /* Primary Deep Blue #0D2A4B */
-  --card: rgba(217, 217, 217, 0.72); /* D9D9D9 with 72% opacity */
+  --card: #ffffff; /* White cards */
   --card-foreground: #0d2a4b; /* Deep blue text on cards */
   --popover: #ffffff; /* White popover */
   --popover-foreground: #0d2a4b; /* Deep blue text */

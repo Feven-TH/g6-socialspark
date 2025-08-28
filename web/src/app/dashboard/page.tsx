@@ -229,7 +229,7 @@ export default function Dashboard() {
         </div>
       </header>
 
-      <div className="container mx-auto px-4 py-8 max-w-6xl">
+      <div className="container mx-auto px-4 py-8 max-w-6xl ">
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Main Content Creation Panel */}
           <div className="lg:col-span-2 space-y-6">
@@ -241,7 +241,7 @@ export default function Dashboard() {
             )}
 
             {/* Idea Input Card */}
-            <Card className="border-2 border-primary/20">
+            <Card className="border-2 border-primary/20 bg-[#D9D9D9]/[0.72]">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 font-montserrat">
                   <Zap className="w-5 h-5 text-secondary" />
