@@ -1,9 +1,26 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from domain.brand_dto import Brand
 
 
 class StoryboardRequest(BaseModel):
     idea: str
-    language: str
-    number_of_shots: int
+    language: str | None
+    number_of_shots: int | None
+    platform: str
     brand_presets: Brand
+    cta: str
+
+
+class Shot(BaseModel):
+    duration: int = Field(
+        description="The duration of the scene in seconds, between 3 - 5 (inclusive)"
+    )
+    text: str = Field(description="The description of the video scene")
+    music: str = Field(
+        description="One word description of the genre of the background music",
+        examples=["upbeat", "downbeat", "jazz", "classical"],
+    )
+
+
+class StoryboardResponse(BaseModel):
+    shots: list[Shot] = Field(description="A list of descriptions for video scenes")

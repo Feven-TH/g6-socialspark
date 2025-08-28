@@ -2,7 +2,7 @@ from pydantic import BaseModel
 
 class Brand(BaseModel):
     name: str
-    tone: str
-    colors: list[str]
-    default_hashtags: list[str]
-    footer_text: str
+    tone: str | None
+    colors: list[str] | None
+    default_hashtags: list[str] | None
+    footer_text: str | None
