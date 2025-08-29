@@ -1,3 +1,4 @@
+// API utilities for SocialSpark backend integration
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 // ----- Types -----
@@ -13,8 +14,9 @@ export interface GenerateImageResponse {
 export interface StoryboardShot {
   id: string;
   description: string;
-  image_url: string;
+  image_url?: string; // optional for compatibility
   duration: number;
+  transition?: string;
 }
 
 export interface GenerateStoryboardResponse {
@@ -22,25 +24,31 @@ export interface GenerateStoryboardResponse {
 }
 
 export interface RenderVideoResponse {
-  video_url: string;
   task_id: string;
+  video_url?: string; // optional
 }
 
 export interface TaskStatus {
-  status: "pending" | "in_progress" | "completed" | "failed";
-  progress?: number; // optional, could be percentage
+  status: "pending" | "processing" | "in_progress" | "completed" | "failed";
+  progress?: number;
   error?: string;
+  video_url?: string;
   result_url?: string;
 }
 
 export interface ExportContentResponse {
-  url: string;
+  download_url?: string;
+  url?: string;
+  format?: string;
+  size?: number;
 }
 
 export interface ScheduledPostResponse {
-  post_id: string;
+  post_id?: string;
+  scheduled_id?: string;
   scheduled_time: string;
-  platforms: string[];
+  platforms?: string[];
+  status?: "scheduled" | "failed";
 }
 
 // ----- API Functions -----
@@ -54,7 +62,6 @@ export async function generateCaption(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ prompt, business_type: businessType, language }),
   });
-
   if (!response.ok) throw new Error(`Failed to generate caption: ${response.statusText}`);
   return response.json();
 }
@@ -68,7 +75,6 @@ export async function generateImage(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ prompt, style }),
   });
-
   if (!response.ok) throw new Error(`Failed to generate image: ${response.statusText}`);
   return response.json();
 }
@@ -82,7 +88,6 @@ export async function generateStoryboard(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ prompt, duration }),
   });
-
   if (!response.ok) throw new Error(`Failed to generate storyboard: ${response.statusText}`);
   return response.json();
 }
@@ -96,7 +101,6 @@ export async function renderVideo(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ storyboard, audio }),
   });
-
   if (!response.ok) throw new Error(`Failed to start video rendering: ${response.statusText}`);
   return response.json();
 }
@@ -106,7 +110,6 @@ export async function getTaskStatus(taskId: string): Promise<TaskStatus> {
     method: "GET",
     headers: { "Content-Type": "application/json" },
   });
-
   if (!response.ok) throw new Error(`Failed to get task status: ${response.statusText}`);
   return response.json();
 }
@@ -120,7 +123,6 @@ export async function exportContent(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ content_id: contentId, format }),
   });
-
   if (!response.ok) throw new Error(`Failed to export content: ${response.statusText}`);
   return response.json();
 }
@@ -135,7 +137,6 @@ export async function schedulePost(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ content, scheduled_time: scheduledTime, platforms }),
   });
-
   if (!response.ok) throw new Error(`Failed to schedule post: ${response.statusText}`);
   return response.json();
 }

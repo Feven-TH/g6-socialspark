@@ -1,4 +1,5 @@
 
+
 import * as React from "react";
 
 import { cn } from "@/lib/utils";
@@ -13,7 +14,9 @@ function Card({ className, ...props }: React.ComponentProps<"div">) {
       )}
       {...props}
     />
+
   );
+
 }
 
 function CardHeader({ className, ...props }: React.ComponentProps<"div">) {
@@ -27,6 +30,7 @@ function CardHeader({ className, ...props }: React.ComponentProps<"div">) {
       {...props}
     />
 
+
   );
 
 }
@@ -39,7 +43,9 @@ function CardTitle({ className, ...props }: React.ComponentProps<"div">) {
       {...props}
     />
 
+
   );
+
 
 }
 
@@ -50,6 +56,7 @@ function CardDescription({ className, ...props }: React.ComponentProps<"div">) {
       className={cn("text-muted-foreground text-sm", className)}
       {...props}
     />
+
 
   );
 
@@ -66,6 +73,7 @@ function CardAction({ className, ...props }: React.ComponentProps<"div">) {
       {...props}
     />
 
+
   );
 
 }
@@ -77,6 +85,7 @@ function CardContent({ className, ...props }: React.ComponentProps<"div">) {
       className={cn("px-6", className)}
       {...props}
     />
+
 
   );
 
@@ -90,6 +99,7 @@ function CardFooter({ className, ...props }: React.ComponentProps<"div">) {
       {...props}
     />
 
+
   );
 
 }
@@ -102,6 +112,7 @@ export {
   CardAction,
   CardDescription,
   CardContent,
+
 
 };
 
