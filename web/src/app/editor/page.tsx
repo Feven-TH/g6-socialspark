@@ -391,7 +391,7 @@ export default function EditorPage() {
         </div>
       </div>
 
-      {/* Footer */}
+      
       <Footer />
     </div>
   )

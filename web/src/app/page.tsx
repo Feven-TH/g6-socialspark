@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link"
 import { Button } from "@/app/components/button";
 import {
   Card,
@@ -17,7 +18,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import Header from "./components/HomeHeader";
-import Footer from "./components/Footer";
+import Footer from "./components/footer";
 
 export default function LandingPage() {
   const features = [
@@ -96,10 +97,10 @@ export default function LandingPage() {
                 className="h-14 px-8 text-lg font-semibold"
                 asChild
               >
-                <a href="/auth/signup">
+                <Link href="/auth/signup">
                   Start Creating Free
                   <ArrowRight className="w-5 h-5 ml-2" />
-                </a>
+                </Link>
               </Button>
               <Button
                 variant="outline"
@@ -107,7 +108,7 @@ export default function LandingPage() {
                 className="h-14 px-8 text-lg bg-transparent"
                 asChild
               >
-                <a href="/auth/login">Sign In</a>
+                <Link href="/auth/login">Sign In</Link>
               </Button>
             </div>
           </div>
@@ -172,10 +173,10 @@ export default function LandingPage() {
             className="h-14 px-8 text-lg font-semibold"
             asChild
           >
-            <a href="/auth/signup">
+            <Link href="/auth/signup">
               Start Your Free Trial
               <ArrowRight className="w-5 h-5 ml-2" />
-            </a>
+            </Link>
           </Button>
         </div>
       </section>
