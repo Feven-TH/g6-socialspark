@@ -31,8 +31,11 @@ import {
   Send,
   Pause,
   Play,
+  ArrowLeft,
 } from "lucide-react";
 import Footer from "@/components/footer";
+import Schedulerheader from "@/components/schedulerheader";
+
 
 // ----- Types -----
 interface EditorContent {
@@ -52,7 +55,9 @@ interface ScheduledPost {
 }
 
 export default function SchedulerPage() {
-    const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(
+    new Date()
+  );
 
   const [selectedTime, setSelectedTime] = useState<string>("09:00");
   const [selectedPlatform, setSelectedPlatform] = useState<
@@ -106,74 +111,9 @@ export default function SchedulerPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
-                <Sparkles className="w-6 h-6 text-primary-foreground" />
-              </div>
-              <div>
-                <h1 className="text-xl font-black font-montserrat text-foreground">
-                  Content Scheduler
-                </h1>
-                <p className="text-sm text-muted-foreground">
-                  Plan and schedule your posts
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-6">
-              <nav className="hidden md:flex items-center gap-6">
-                <a
-                  href="/library"
-                  className="text-sm font-medium text-muted-foreground hover:text-foreground"
-                >
-                  Library
-                </a>
-                <a
-                  href="/editor"
-                  className="text-sm font-medium text-muted-foreground hover:text-foreground"
-                >
-                  Editor
-                </a>
-                <a
-                  href="/schedule"
-                  className="text-sm font-medium text-muted-foreground hover:text-foreground"
-                >
-                  Schedule
-                </a>
-                <a
-                  href="/brand"
-                  className="text-sm font-medium text-muted-foreground hover:text-foreground"
-                >
-                  Brand
-                </a>
-              </nav>
-
-              <div className="flex items-center gap-2">
-                <Button variant="outline" asChild>
-                  <a href="/editor">
-                    <Edit className="w-4 h-4 mr-2" />
-                    Back to Editor
-                  </a>
-                </Button>
-                <Button asChild>
-                  <a href="/dashboard">
-                    <Plus className="w-4 h-4 mr-2" />
-                    Create New
-                  </a>
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
-
+      <Schedulerheader />
       <div className="container mx-auto px-4 py-8">
         <div className="grid lg:grid-cols-3 gap-8">
-          {/* Scheduling Panel */}
           <div className="lg:col-span-2 space-y-6">
             {editorContent && (
               <Card>
@@ -223,7 +163,6 @@ export default function SchedulerPage() {
               </Card>
             )}
 
-            {/* Quick Schedule */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -309,17 +248,15 @@ export default function SchedulerPage() {
 
                   <div className="space-y-4">
                     <Label>Select Date</Label>
-                    
 
-<Calendar
-  mode="single"
-  selected={selectedDate}
-  onSelect={(date) => setSelectedDate(date || undefined)}
-  className="rounded-md border"
-  disabled={(date) => date < new Date()}
-  required
-/>
-
+                    <Calendar
+                      mode="single"
+                      selected={selectedDate}
+                      onSelect={(date) => setSelectedDate(date || undefined)}
+                      className="rounded-md border"
+                      disabled={(date) => date < new Date()}
+                      required
+                    />
                   </div>
                 </div>
 
@@ -337,94 +274,6 @@ export default function SchedulerPage() {
             </Card>
 
             {/* Scheduled Posts */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Scheduled Posts</CardTitle>
-                <CardDescription>Manage your upcoming content</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {scheduledPosts.map((post) => (
-                    <div
-                      key={post.id}
-                      className="flex items-center gap-4 p-4 border rounded-lg"
-                    >
-                      <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0">
-                        <img
-                          src={post.thumbnail || "/placeholder.svg"}
-                          alt={post.title}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h3 className="font-semibold truncate">
-                            {post.title}
-                          </h3>
-                          <Badge
-                            variant={
-                              post.status === "scheduled"
-                                ? "default"
-                                : "secondary"
-                            }
-                          >
-                            {post.status}
-                          </Badge>
-                        </div>
-
-                        <p className="text-sm text-muted-foreground mb-2 line-clamp-1">
-                          {post.caption}
-                        </p>
-
-                        <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                          <div className="flex items-center gap-1">
-                            {post.platform === "instagram" ? (
-                              <Instagram className="w-3 h-3" />
-                            ) : (
-                              <Video className="w-3 h-3" />
-                            )}
-                            {post.platform}
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <CalendarIcon className="w-3 h-3" />
-                            {new Date(post.scheduledFor).toLocaleDateString()}
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <Clock className="w-3 h-3" />
-                            {new Date(post.scheduledFor).toLocaleTimeString(
-                              [],
-                              {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              }
-                            )}
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        {post.status === "scheduled" ? (
-                          <Button size="sm" variant="outline">
-                            <Pause className="w-4 h-4" />
-                          </Button>
-                        ) : (
-                          <Button size="sm" variant="outline">
-                            <Play className="w-4 h-4" />
-                          </Button>
-                        )}
-                        <Button size="sm" variant="outline">
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button size="sm" variant="ghost">
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
           </div>
 
           {/* Analytics & Insights */}
