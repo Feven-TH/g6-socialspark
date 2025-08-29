@@ -1,4 +1,4 @@
-from domain.videos_dto import StoryboardRequest, StoryboardResponse
+from domain.videos_dto import StoryboardRequest, StoryboardResponse, RenderRequest
 from infrastructure.ai_services import get_structured_response
 from templates.prompt_templates import STORYBOARD_PROMPT_TEMPLATE
 
@@ -16,13 +16,20 @@ def generate_storyboard(request: StoryboardRequest) -> StoryboardResponse:
             "colors": ", ".join(request.brand_presets.colors),
             "brand_tone": request.brand_presets.tone,
             "platform": request.platform,
-            "cta": request.cta or "tiktok"
+            "cta": request.cta or "tiktok",
         }
-        
+
         return get_structured_response(
             prompt_template_str=STORYBOARD_PROMPT_TEMPLATE,
             input_variables=input_variables,
-            pydantic_model=StoryboardResponse
+            pydantic_model=StoryboardResponse,
         )
     except Exception as e:
         raise Exception(f"Failed to generate storyboard: {e}")
+
+
+def render_video(request: RenderRequest):
+    """
+    Renders a video based on the provided request.
+    """
+    return {"status": "queued", "task_id": 1}
