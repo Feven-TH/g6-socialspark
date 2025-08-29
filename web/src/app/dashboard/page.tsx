@@ -1,4 +1,5 @@
 "use client"
+import Image from "next/image"
 
 import { useState } from "react"
 import { Button } from "../components/button"
@@ -7,13 +8,13 @@ import { Textarea } from "../components/textarea"
 import { Badge } from "../components/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/select"
 import { Progress } from "../components/progress"
+import Header from "../components/header";
 import {
   Sparkles,
   Instagram,
   Video,
   ImageIcon,
   Download,
-  Share2,
   Clock,
   Palette,
   Zap,
@@ -25,11 +26,10 @@ import {
   Type,
   Play,
   RotateCcw,
-  Settings,
   Languages,
   AlertCircle,
 } from "lucide-react"
-import { generateCaption, generateImage, generateStoryboard, renderVideo, pollTaskStatus } from "../../lib/api"
+import { generateCaption, generateImage, generateStoryboard, renderVideo, pollTaskStatus } from "@/lib/api"
 import { Alert, AlertDescription } from "../components/alert"
 
 export default function Dashboard() {
@@ -157,6 +157,7 @@ export default function Dashboard() {
             videoUrl: completedTask.video_url ?? "",
           }))
         }
+
       }
 
       setProgress(100)
@@ -178,58 +179,8 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
-                <Sparkles className="w-6 h-6 text-primary-foreground" />
-              </div>
-              <div>
-                <h1 className="text-xl font-black font-montserrat text-foreground">{t.title}</h1>
-                <p className="text-sm text-muted-foreground">{t.subtitle}</p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-4">
-              <nav className="hidden md:flex items-center gap-2">
-                <Button variant="ghost" size="sm" asChild>
-                  <a href="/library">Library</a>
-                </Button>
-                <Button variant="ghost" size="sm" asChild>
-                  <a href="/editor">Editor</a>
-                </Button>
-                <Button variant="ghost" size="sm" asChild>
-                  <a href="/scheduler">Schedule</a>
-                </Button>
-                <Button variant="ghost" size="sm" asChild>
-                  <a href="/brand-setup">Brand</a>
-                </Button>
-              </nav>
-
-              <Select value={language} onValueChange={setLanguage}>
-                <SelectTrigger className="w-24">
-                  <Languages className="w-4 h-4" />
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="en">EN</SelectItem>
-                  <SelectItem value="am">አማ</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <Button variant="outline" size="sm" asChild>
-                <a href="/settings">
-                  <Settings className="w-4 h-4" />
-                </a>
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <div className="container mx-auto px-4 py-8 max-w-6xl ">
+     <Header/>
+      <div className="container mx-auto px-4 py-8 max-w-6xl">
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Main Content Creation Panel */}
           <div className="lg:col-span-2 space-y-6">
@@ -241,7 +192,7 @@ export default function Dashboard() {
             )}
 
             {/* Idea Input Card */}
-            <Card className="border-2 border-primary/20 bg-[#D9D9D9]/[0.72]">
+            <Card className="border-2 border-primary/20  bg-[#D9D9D9]/[0.72]">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 font-montserrat">
                   <Zap className="w-5 h-5 text-secondary" />
@@ -441,7 +392,7 @@ export default function Dashboard() {
                       </div>
                       <div className="aspect-square bg-muted rounded-lg overflow-hidden">
                         {contentType === "image" ? (
-                          <img
+                          <Image
                             src={generatedContent.imageUrl || "/placeholder.svg"}
                             alt="Generated content"
                             className="w-full h-full object-cover"
@@ -496,10 +447,36 @@ export default function Dashboard() {
                       <Clock className="w-4 h-4 mr-2" />
                       {t.schedule}
                     </Button>
-                    <Button>
-                      <Share2 className="w-4 h-4 mr-2" />
-                      {t.share}
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        // Get existing library items or empty array
+                        const existingLibrary = JSON.parse(localStorage.getItem("libraryContent") || "[]");
+
+                        // Add new content
+                        existingLibrary.push({
+                          caption: generatedContent.caption,
+                          hashtags: generatedContent.hashtags,
+                          imageUrl: generatedContent.imageUrl,
+                          videoUrl: generatedContent.videoUrl,
+                          platform,
+                          contentType,
+                          tone,
+                          createdAt: new Date().toISOString(),
+                        });
+
+                        // Save back to localStorage
+                        localStorage.setItem("libraryContent", JSON.stringify(existingLibrary));
+
+                        // Redirect to library page
+                        window.location.href = "/library";
+                      }}
+                    >
+                      <ImageIcon className="w-4 h-4 mr-2" />
+                      {t.contentLibrary}
                     </Button>
+
+
                   </div>
                 </CardContent>
               </Card>
@@ -507,9 +484,64 @@ export default function Dashboard() {
           </div>
 
           {/* Sidebar */}
-          <div className="space-y-6">
+          <div className="space-y-6 ">
+            {/* Business Type Quick Setup */}
             
-           
+              <Card className="bg-[#D9D9D9]/[0.72] ">
+                <CardHeader>
+                  <CardTitle className="text-lg font-montserrat ">Business Type</CardTitle>
+                  <CardDescription>Quick setup for your business</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 gap-3 ">
+                    {businessTypes.map(({ icon: Icon, label, value }) => (
+                      <Button key={value} variant="outline" className="h-20 flex-col gap-2 bg-transparent">
+                        <Icon className="w-6 h-6" />
+                        <span className="text-xs">{label}</span>
+                      </Button>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            
+            
+
+            {/* Brand Presets */}
+            <Card className="bg-[#D9D9D9]/[0.72] ">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg font-montserrat">
+                  <Palette className="w-5 h-5" />
+                  {t.brandPresets}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Brand Colors</label>
+                  <div className="flex gap-2">
+                    <div className="w-8 h-8 bg-primary rounded-full border-2 border-background shadow-sm"></div>
+                    <div className="w-8 h-8 bg-secondary rounded-full border-2 border-background shadow-sm"></div>
+                    <div className="w-8 h-8 bg-accent rounded-full border-2 border-background shadow-sm"></div>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Default Hashtags</label>
+                  <div className="flex flex-wrap gap-1">
+                    <Badge variant="outline" className="text-xs">
+                      #EthiopianBusiness
+                    </Badge>
+                    <Badge variant="outline" className="text-xs">
+                      #AddisAbaba
+                    </Badge>
+                    <Badge variant="outline" className="text-xs">
+                      #LocalBrand
+                    </Badge>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            
           </div>
         </div>
       </div>

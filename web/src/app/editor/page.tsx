@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import Image from "next/image"
 import { Button } from "@/app/components/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/card"
+import { Footer } from "@/app/components/footer"
 import { Textarea } from "@/app/components/textarea"
 import { Input } from "@/app/components/input"
 import { Label } from "@/app/components/label"
@@ -327,6 +328,9 @@ export default function EditorPage() {
           </div>
         </div>
       </div>
+
+      
+      <Footer />
     </div>
   )
 }
