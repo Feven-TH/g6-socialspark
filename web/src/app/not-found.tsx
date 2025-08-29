@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/app/components/button";
 import Header from "./components/HomeHeader";
-import Footer from "./components/Footer";
+import Footer from "./components/footer";
 
 export default function NotFound() {
   return (
