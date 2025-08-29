@@ -1,28 +1,34 @@
+// lib/main.dart
 import 'package:flutter/material.dart';
-import 'features/authentication/presentation/pages/login_page.dart';
-import 'features/authentication/presentation/pages/registration_page.dart';
+import 'package:provider/provider.dart';
+import 'config/router/app_router.dart';
+import 'core/services/session_store.dart';
 
-void main() {
-  runApp(const MyApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final session = SessionStore();
+  await session.init();
+  runApp(AppRoot(session: session));
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class AppRoot extends StatelessWidget {
+  final SessionStore session;
+  const AppRoot({super.key, required this.session});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'SocialSpark',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        fontFamily: "Poppins",
+    return ChangeNotifierProvider.value(
+      value: session,
+      child: Builder(
+        builder: (context) {
+          final router = buildRouter(session);
+          return MaterialApp.router(
+            title: 'SocialSpark',
+            theme: ThemeData(useMaterial3: true),
+            routerConfig: router,
+          );
+        },
       ),
-      initialRoute: "/login",
-      routes: {
-        "/login": (context) => const LoginPage(),
-        "/register": (context) => const RegistrationPage(),
-      },
     );
   }
 }
