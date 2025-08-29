@@ -1,6 +1,6 @@
 "use client"
 import Image from "next/image"
-import Link from "next/link"
+
 import { useState } from "react"
 import { Button } from "../components/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/card"
@@ -180,7 +180,6 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-background">
      <Header/>
-
       <div className="container mx-auto px-4 py-8 max-w-6xl">
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Main Content Creation Panel */}

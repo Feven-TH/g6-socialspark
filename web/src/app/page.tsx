@@ -18,7 +18,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import Header from "./components/HomeHeader";
-import Footer from "./components/Footer";
+import Footer from "./components/footer";
 
 export default function LandingPage() {
   const features = [
