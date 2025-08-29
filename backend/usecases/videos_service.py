@@ -1,6 +1,7 @@
 from domain.videos_dto import StoryboardRequest, StoryboardResponse, RenderRequest
 from infrastructure.ai_services import get_structured_response
 from templates.prompt_templates import STORYBOARD_PROMPT_TEMPLATE
+from usecases.tasks import render_video
 
 
 def generate_storyboard(request: StoryboardRequest) -> StoryboardResponse:
@@ -28,8 +29,12 @@ def generate_storyboard(request: StoryboardRequest) -> StoryboardResponse:
         raise Exception(f"Failed to generate storyboard: {e}")
 
 
-def render_video(request: RenderRequest):
+def create_render_task(request: RenderRequest):
     """
     Renders a video based on the provided request.
     """
-    return {"status": "queued", "task_id": 1}
+    try:
+        task = render_video.delay(request.model_dump())
+        return {"task_id": task.id, "status": "queued"}
+    except Exception as e:
+        raise Exception(f"Failed to create render task: {e}")
