@@ -1,11 +1,15 @@
 "use client"
+import Link from "next/link"
+import Image from "next/image"
 
 import { useState } from "react"
+import { useEffect } from "react"
 import { Button } from "../components/button"
 import { Card, CardContent } from "../components/card"
 import { Input } from "../components/input"
 import { Badge } from "../components/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/select"
+import Header from "../components/header";
 import {
   Sparkles,
   Search,
@@ -25,14 +29,26 @@ import {
   MessageCircle,
   Clock,
 } from "lucide-react"
+interface LibraryItem {
+  id: number
+  title: string
+  caption: string
+  hashtags: string[]
+  imageUrl: string
+  platform: string
+  contentType: string
+  type: string
+  videoUrl: string
+  createdAt: string
+  status: string
+  engagement: {
+    likes: number
+    comments: number
+    views: number
+  }
+}
 
-export default function LibraryPage() {
-  const [viewMode, setViewMode] = useState("grid")
-  const [searchQuery, setSearchQuery] = useState("")
-  const [filterType, setFilterType] = useState("all")
-  const [filterPlatform, setFilterPlatform] = useState("all")
-
-  const mockContent = [
+const mockContent = [
     {
       id: 1,
       title: "Caramel Macadamia Latte",
@@ -44,6 +60,8 @@ export default function LibraryPage() {
       thumbnail: "/ethiopian-cafe-latte-with-caramel-and-macadamia-nu.png",
       caption: "Try our new Caramel Macadamia Latte! Perfect coffee blend...",
       hashtags: ["AddisAbebaCafe", "EthiopianCoffee", "Latte"],
+      videoUrl: "",
+      imageUrl: "/ethiopian-cafe-latte-with-caramel-and-macadamia-nu.png",
     },
     {
       id: 2,
@@ -56,6 +74,7 @@ export default function LibraryPage() {
       thumbnail: "/short-video-of-latte-being-made.png",
       caption: "Watch how we make our signature latte...",
       hashtags: ["BehindTheScenes", "CoffeeProcess", "Barista"],
+      imageUrl: "/short-video-of-latte-being-made.png",
     },
     {
       id: 3,
@@ -68,6 +87,7 @@ export default function LibraryPage() {
       thumbnail: "/weekend-coffee-special.png",
       caption: "Weekend vibes with our special blend...",
       hashtags: ["WeekendSpecial", "CoffeeLovers", "Relax"],
+      imageUrl: "/weekend-coffee-special.png",
     },
     {
       id: 4,
@@ -80,9 +100,22 @@ export default function LibraryPage() {
       thumbnail: "/happy-customer-with-coffee.png",
       caption: "Amazing feedback from our lovely customers...",
       hashtags: ["CustomerLove", "Reviews", "HappyCustomers"],
+      imageUrl: "/happy-customer-with-coffee.png",
     },
   ]
 
+
+export default function LibraryPage() {
+  const [viewMode, setViewMode] = useState("grid")
+  const [searchQuery, setSearchQuery] = useState("")
+  const [filterType, setFilterType] = useState("all")
+  const [filterPlatform, setFilterPlatform] = useState("all")
+  useEffect(() => {
+  localStorage.setItem("libraryContent", JSON.stringify(mockContent))
+}, [])
+
+
+  
   const filteredContent = mockContent.filter((item) => {
     const matchesSearch =
       item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -95,29 +128,7 @@ export default function LibraryPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
-                <Sparkles className="w-6 h-6 text-primary-foreground" />
-              </div>
-              <div>
-                <h1 className="text-xl font-black font-montserrat text-foreground">Content Library</h1>
-                <p className="text-sm text-muted-foreground">Manage your created content</p>
-              </div>
-            </div>
-
-            <Button asChild>
-              <a href="/">
-                <Sparkles className="w-4 h-4 mr-2" />
-                Create New
-              </a>
-            </Button>
-          </div>
-        </div>
-      </header>
+     <Header/>
 
       <div className="container mx-auto px-4 py-8">
         {/* Filters and Search */}
@@ -185,10 +196,11 @@ export default function LibraryPage() {
             {filteredContent.map((item) => (
               <Card key={item.id} className="group hover:shadow-lg transition-shadow  bg-[#D9D9D9]/[0.72]" >
                 <div className="relative aspect-square overflow-hidden rounded-t-lg">
-                  <img
+                  <Image
                     src={item.thumbnail || "/placeholder.svg"}
                     alt={item.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                    fill
+                    className=" object-cover group-hover:scale-105 transition-transform"
                   />
                   <div className="absolute top-2 left-2">
                     <Badge
@@ -207,11 +219,15 @@ export default function LibraryPage() {
                     )}
                     {item.type === "video" && <Video className="w-4 h-4 text-white bg-black/50 rounded p-0.5" />}
                   </div>
+                  {/* Hover Overlay Buttons */}
                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
                     <div className="flex gap-2">
-                      <Button size="sm" variant="secondary">
-                        <Eye className="w-4 h-4" />
-                      </Button>
+                      <Link href={`/view/${item.id}`} passHref>
+                        <Button size="sm" variant="secondary" className="flex items-center">
+                          <Eye className="w-4 h-4" />
+                        </Button>
+                      </Link>
+
                       <Button
                         size="sm"
                         variant="secondary"
@@ -290,16 +306,19 @@ export default function LibraryPage() {
             ))}
           </div>
         ) : (
+          // List view (already had Link wrapped Eye button)
           <div className="space-y-4">
             {filteredContent.map((item) => (
               <Card key={item.id}>
                 <CardContent className="p-6">
                   <div className="flex items-center gap-4">
                     <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0">
-                      <img
+                      <Image
                         src={item.thumbnail || "/placeholder.svg"}
                         alt={item.title}
-                        className="w-full h-full object-cover"
+                        width={64}
+                        height={64}
+                        className=" object-cover"
                       />
                     </div>
 
@@ -354,10 +373,52 @@ export default function LibraryPage() {
                     </div>
 
                     <div className="flex items-center gap-2">
-                      <Button size="sm" variant="outline">
-                        <Eye className="w-4 h-4 mr-2" />
-                        View
-                      </Button>
+                      <Link href={`/view/${item.id}`}>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="flex items-center"
+                         
+
+                        // TS-safe onClick handler
+                        onClick={() => {
+                          // Get library items from localStorage and parse as LibraryItem[]
+                          const libraryItems: LibraryItem[] = JSON.parse(
+                            localStorage.getItem("libraryContent") || "[]"
+                          )
+
+                          // Check if this item already exists
+                          const exists = libraryItems.some((i) => i.id === item.id)
+                          if (!exists) {
+                            const newItem: LibraryItem = {
+                              id: item.id,
+                              title: item.title,
+                              caption: item.caption,
+                              hashtags: item.hashtags,
+                              imageUrl: item.thumbnail,
+                              platform: item.platform,
+                              contentType: item.type,
+                              type: item.type,
+                              videoUrl: item.videoUrl || "",
+                              createdAt: item.createdAt,
+                              status: item.status,
+                              engagement: item.engagement,
+                            }
+
+                            libraryItems.push(newItem)
+                            localStorage.setItem("libraryContent", JSON.stringify(libraryItems))
+                          }
+
+                          // Save the current item for viewing
+                          localStorage.setItem("viewContent", JSON.stringify(item))
+                          window.location.href = `/view/${item.id}`
+                        }}
+
+                        >
+                          View
+                        </Button>
+                      </Link>
+
                       <Button
                         size="sm"
                         variant="outline"
@@ -424,10 +485,10 @@ export default function LibraryPage() {
               {searchQuery ? "Try adjusting your search terms" : "Start creating your first piece of content"}
             </p>
             <Button asChild>
-              <a href="/">
+              <Link href="/">
                 <Sparkles className="w-4 h-4 mr-2" />
                 Create Content
-              </a>
+              </Link>
             </Button>
           </div>
         )}
