@@ -4,6 +4,7 @@ import { Button } from "./button";
 
 const Header = () => {
   return (
+
     <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-50">
   <div className="container mx-auto px-4 py-4 flex items-center justify-between">
     {/* Left side: Brand title + subtitle */}
@@ -32,3 +33,4 @@ const Header = () => {
 };
 
 export default Header;
+
