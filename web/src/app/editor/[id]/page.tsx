@@ -1,19 +1,5 @@
 "use client";
 
-<<<<<<< HEAD
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import Image from "next/image"
-import { Button } from "@/app/components/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/card"
-import  Footer  from "@/app/components/Footer"
-import { Textarea } from "@/app/components/textarea"
-import { Input } from "@/app/components/input"
-import { Label } from "@/app/components/label"
-import { Badge } from "@/app/components/badge"
-import { Slider } from "@/app/components/slider"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/app/components/select"
-=======
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
@@ -32,7 +18,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/select";
->>>>>>> origin/Web
 import {
   Type,
   Layers,
@@ -399,6 +384,7 @@ export default function EditorPage() {
           </div>
         </div>
       </div>
+      <Footer/>
     </div>
   );
 }

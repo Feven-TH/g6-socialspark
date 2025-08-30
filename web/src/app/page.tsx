@@ -17,12 +17,7 @@ import {
   Users,
   ArrowRight,
 } from "lucide-react";
-<<<<<<< HEAD
-import Header from "./components/HomeHeader";
-import Footer from "./components/Footer";
-=======
 import Header from "../components/HomeHeader";
->>>>>>> origin/Web
 
 export default function LandingPage() {
   const features = [
