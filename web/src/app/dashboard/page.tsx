@@ -1,14 +1,26 @@
-"use client"
-import Image from "next/image"
+"use client";
+import Image from "next/image";
 
-import { useState } from "react"
-import { Button } from "../components/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/card"
-import { Textarea } from "../components/textarea"
-import { Badge } from "../components/badge"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/select"
-import { Progress } from "../components/progress"
-import Header from "../components/header";
+import { useState } from "react";
+import { Button } from "@/components/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/card";
+import { Textarea } from "@/components/textarea";
+import { Badge } from "@/components/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/select";
+import { Progress } from "@/components/progress";
+import Header from "@/components/commonheader";
 import {
   Sparkles,
   Instagram,
@@ -26,30 +38,35 @@ import {
   Type,
   Play,
   RotateCcw,
-  Languages,
   AlertCircle,
-} from "lucide-react"
-import { generateCaption, generateImage, generateStoryboard, renderVideo, pollTaskStatus } from "@/lib/api"
-import { Alert, AlertDescription } from "../components/alert"
+} from "lucide-react";
+import {
+  generateCaption,
+  generateImage,
+  generateStoryboard,
+  renderVideo,
+  pollTaskStatus,
+} from "@/lib/api";
+import { Alert, AlertDescription } from "@/components/alert";
 
 export default function Dashboard() {
-  const [language, setLanguage] = useState("en")
-  const [currentStep, setCurrentStep] = useState("idea")
-  const [idea, setIdea] = useState("")
-  const [platform, setPlatform] = useState("instagram")
-  const [contentType, setContentType] = useState("image")
-  const [tone, setTone] = useState("playful")
-  const [businessType, setBusinessType] = useState("cafe")
-  const [isGenerating, setIsGenerating] = useState(false)
-  const [progress, setProgress] = useState(0)
-  const [error, setError] = useState<string | null>(null)
+  const [language, setLanguage] = useState("en");
+  const [currentStep, setCurrentStep] = useState("idea");
+  const [idea, setIdea] = useState("");
+  const [platform, setPlatform] = useState("instagram");
+  const [contentType, setContentType] = useState("image");
+  const [tone, setTone] = useState("playful");
+  const [businessType, setBusinessType] = useState("cafe");
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [error, setError] = useState<string | null>(null);
   type GeneratedContent = {
-    caption: string
-    hashtags: string[]
-    imageUrl: string
-    videoUrl: string
-    taskId: string
-  }
+    caption: string;
+    hashtags: string[];
+    imageUrl: string;
+    videoUrl: string;
+    taskId: string;
+  };
 
   const [generatedContent, setGeneratedContent] = useState<GeneratedContent>({
     caption: "",
@@ -57,13 +74,14 @@ export default function Dashboard() {
     imageUrl: "",
     videoUrl: "",
     taskId: "", // For video rendering
-  })
+  });
 
   const translations = {
     en: {
       title: "SocialSpark",
       subtitle: "AI-Powered Content Creation for Ethiopian SMEs",
-      ideaPlaceholder: 'Describe your content idea... e.g., "Fun TikTok for my café\'s new latte"',
+      ideaPlaceholder:
+        'Describe your content idea... e.g., "Fun TikTok for my café\'s new latte"',
       generate: "Generate Content",
       regenerate: "Regenerate",
       export: "Export",
@@ -75,7 +93,8 @@ export default function Dashboard() {
       brandPresets: "Brand Presets",
       contentLibrary: "Content Library",
       examples: "Try these examples:",
-      exampleCafe: "Create a fun TikTok for my café's new caramel macadamia latte",
+      exampleCafe:
+        "Create a fun TikTok for my café's new caramel macadamia latte",
       exampleSale: "Instagram post for clothing sale, 20% off tees, today only",
       exampleBeauty: "Beauty tip video for natural skincare routine",
     },
@@ -98,88 +117,96 @@ export default function Dashboard() {
       exampleSale: "ለልብስ ሽያጭ ኢንስታግራም ፖስት፣ 20% ቅናሽ ቲሸርቶች፣ ዛሬ ብቻ",
       exampleBeauty: "ለተፈጥሮ የቆዳ እንክብካቤ ሩቲን የውበት ምክር ቪዲዮ",
     },
-  }
+  };
 
-  const t = translations[language as keyof typeof translations]
+  const t = translations[language as keyof typeof translations];
 
   const handleGenerate = async () => {
-    if (!idea.trim()) return
+    if (!idea.trim()) return;
 
-    setIsGenerating(true)
-    setProgress(0)
-    setCurrentStep("generating")
-    setError(null)
+    setIsGenerating(true);
+    setProgress(0);
+    setCurrentStep("generating");
+    setError(null);
 
     try {
       // Step 1: Generate caption and hashtags
-      setProgress(20)
-      const captionResponse = await generateCaption(idea, businessType, language)
+      setProgress(20);
+      const captionResponse = await generateCaption(
+        idea,
+        businessType,
+        language
+      );
 
-      setProgress(40)
+      setProgress(40);
       setGeneratedContent((prev) => ({
         ...prev,
         caption: captionResponse.caption,
         hashtags: captionResponse.hashtags,
-      }))
+      }));
 
       // Step 2: Generate image
-      setProgress(60)
-      const imageResponse = await generateImage(idea, tone)
+      setProgress(60);
+      const imageResponse = await generateImage(idea, tone);
 
-      setProgress(80)
+      setProgress(80);
       setGeneratedContent((prev) => ({
         ...prev,
         imageUrl: imageResponse.image_url,
-      }))
+      }));
 
       // Step 3: Generate video if needed
       if (contentType === "video") {
-        setProgress(85)
-        const storyboardResponse = await generateStoryboard(idea, 15)
+        setProgress(85);
+        const storyboardResponse = await generateStoryboard(idea, 15);
 
-        setProgress(90)
-        const videoResponse = await renderVideo(storyboardResponse.shots)
+        setProgress(90);
+        const videoResponse = await renderVideo(storyboardResponse.shots);
 
         setGeneratedContent((prev) => ({
           ...prev,
           taskId: videoResponse.task_id,
-        }))
+        }));
 
         // Poll for video completion
-        setProgress(95)
-        const completedTask = await pollTaskStatus(videoResponse.task_id, (status) => {
-          console.log("[v0] Video rendering status:", status.status)
-        })
+        setProgress(95);
+        const completedTask = await pollTaskStatus(
+          videoResponse.task_id,
+          (status) => {
+            console.log("[v0] Video rendering status:", status.status);
+          }
+        );
 
         if (completedTask.video_url) {
           setGeneratedContent((prev) => ({
             ...prev,
             videoUrl: completedTask.video_url ?? "",
-          }))
+          }));
         }
-
       }
 
-      setProgress(100)
-      setCurrentStep("preview")
+      setProgress(100);
+      setCurrentStep("preview");
     } catch (err) {
-      console.error("[v0] Generation error:", err)
-      setError(err instanceof Error ? err.message : "Failed to generate content")
+      console.error("[v0] Generation error:", err);
+      setError(
+        err instanceof Error ? err.message : "Failed to generate content"
+      );
     } finally {
-      setIsGenerating(false)
+      setIsGenerating(false);
     }
-  }
+  };
 
   const businessTypes = [
     { icon: Coffee, label: "Café", value: "cafe" },
     { icon: ShoppingBag, label: "Retail", value: "retail" },
     { icon: Scissors, label: "Salon", value: "salon" },
     { icon: Camera, label: "Photography", value: "photography" },
-  ]
+  ];
 
   return (
     <div className="min-h-screen bg-background">
-     <Header/>
+      <Header />
       <div className="container mx-auto px-4 py-8 max-w-6xl">
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Main Content Creation Panel */}
@@ -211,10 +238,20 @@ export default function Dashboard() {
 
                 {/* Quick Examples */}
                 <div className="flex flex-wrap gap-2">
-                  <Button variant="outline" size="sm" onClick={() => setIdea(t.exampleCafe)} className="text-xs">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIdea(t.exampleCafe)}
+                    className="text-xs"
+                  >
                     {t.exampleCafe.substring(0, 30)}...
                   </Button>
-                  <Button variant="outline" size="sm" onClick={() => setIdea(t.exampleSale)} className="text-xs">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIdea(t.exampleSale)}
+                    className="text-xs"
+                  >
                     {t.exampleSale.substring(0, 30)}...
                   </Button>
                 </div>
@@ -222,8 +259,13 @@ export default function Dashboard() {
                 {/* Business Type and Platform Selection */}
                 <div className="grid grid-cols-3 gap-4">
                   <div>
-                    <label className="text-sm font-medium mb-2 block">Business Type</label>
-                    <Select value={businessType} onValueChange={setBusinessType}>
+                    <label className="text-sm font-medium mb-2 block">
+                      Business Type
+                    </label>
+                    <Select
+                      value={businessType}
+                      onValueChange={setBusinessType}
+                    >
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
@@ -237,7 +279,9 @@ export default function Dashboard() {
                   </div>
 
                   <div>
-                    <label className="text-sm font-medium mb-2 block">Platform</label>
+                    <label className="text-sm font-medium mb-2 block">
+                      Platform
+                    </label>
                     <Select value={platform} onValueChange={setPlatform}>
                       <SelectTrigger>
                         <SelectValue />
@@ -260,7 +304,9 @@ export default function Dashboard() {
                   </div>
 
                   <div>
-                    <label className="text-sm font-medium mb-2 block">Content Type</label>
+                    <label className="text-sm font-medium mb-2 block">
+                      Content Type
+                    </label>
                     <Select value={contentType} onValueChange={setContentType}>
                       <SelectTrigger>
                         <SelectValue />
@@ -287,17 +333,19 @@ export default function Dashboard() {
                 <div>
                   <label className="text-sm font-medium mb-2 block">Tone</label>
                   <div className="flex flex-wrap gap-2">
-                    {["playful", "professional", "casual", "elegant"].map((toneOption) => (
-                      <Button
-                        key={toneOption}
-                        variant={tone === toneOption ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => setTone(toneOption)}
-                        className="capitalize"
-                      >
-                        {toneOption}
-                      </Button>
-                    ))}
+                    {["playful", "professional", "casual", "elegant"].map(
+                      (toneOption) => (
+                        <Button
+                          key={toneOption}
+                          variant={tone === toneOption ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setTone(toneOption)}
+                          className="capitalize"
+                        >
+                          {toneOption}
+                        </Button>
+                      )
+                    )}
                   </div>
                 </div>
 
@@ -329,14 +377,14 @@ export default function Dashboard() {
                       {progress < 20
                         ? "Analyzing your idea..."
                         : progress < 40
-                          ? "Generating caption..."
-                          : progress < 60
-                            ? "Creating hashtags..."
-                            : progress < 80
-                              ? "Generating visual content..."
-                              : progress < 95
-                                ? "Creating video..."
-                                : "Finalizing content..."}
+                        ? "Generating caption..."
+                        : progress < 60
+                        ? "Creating hashtags..."
+                        : progress < 80
+                        ? "Generating visual content..."
+                        : progress < 95
+                        ? "Creating video..."
+                        : "Finalizing content..."}
                     </p>
                   </div>
                 )}
@@ -363,7 +411,12 @@ export default function Dashboard() {
                         </div>
                         <Textarea
                           value={generatedContent.caption}
-                          onChange={(e) => setGeneratedContent({ ...generatedContent, caption: e.target.value })}
+                          onChange={(e) =>
+                            setGeneratedContent({
+                              ...generatedContent,
+                              caption: e.target.value,
+                            })
+                          }
                           className="min-h-[120px]"
                           dir={language === "am" ? "ltr" : "ltr"}
                         />
@@ -376,7 +429,11 @@ export default function Dashboard() {
                         </div>
                         <div className="flex flex-wrap gap-2">
                           {generatedContent.hashtags.map((hashtag, index) => (
-                            <Badge key={index} variant="secondary" className="text-xs">
+                            <Badge
+                              key={index}
+                              variant="secondary"
+                              className="text-xs"
+                            >
                               #{hashtag}
                             </Badge>
                           ))}
@@ -393,19 +450,27 @@ export default function Dashboard() {
                       <div className="aspect-square bg-muted rounded-lg overflow-hidden">
                         {contentType === "image" ? (
                           <Image
-                            src={generatedContent.imageUrl || "/placeholder.svg"}
+                            src={
+                              generatedContent.imageUrl || "/placeholder.svg"
+                            }
                             alt="Generated content"
                             className="w-full h-full object-cover"
                           />
                         ) : (
                           <div className="w-full h-full bg-muted flex items-center justify-center">
                             {generatedContent.videoUrl ? (
-                              <video src={generatedContent.videoUrl} controls className="w-full h-full object-cover" />
+                              <video
+                                src={generatedContent.videoUrl}
+                                controls
+                                className="w-full h-full object-cover"
+                              />
                             ) : (
                               <div className="text-center">
                                 <Play className="w-12 h-12 mx-auto mb-2 text-muted-foreground" />
                                 <p className="text-sm text-muted-foreground">
-                                  {generatedContent.taskId ? "Video rendering..." : "Video Preview"}
+                                  {generatedContent.taskId
+                                    ? "Video rendering..."
+                                    : "Video Preview"}
                                 </p>
                               </div>
                             )}
@@ -439,9 +504,9 @@ export default function Dashboard() {
                             platform,
                             contentType,
                             tone,
-                          }),
-                        )
-                        window.location.href = "/scheduler"
+                          })
+                        );
+                        window.location.href = "/scheduler";
                       }}
                     >
                       <Clock className="w-4 h-4 mr-2" />
@@ -451,7 +516,9 @@ export default function Dashboard() {
                       variant="outline"
                       onClick={() => {
                         // Get existing library items or empty array
-                        const existingLibrary = JSON.parse(localStorage.getItem("libraryContent") || "[]");
+                        const existingLibrary = JSON.parse(
+                          localStorage.getItem("libraryContent") || "[]"
+                        );
 
                         // Add new content
                         existingLibrary.push({
@@ -466,7 +533,10 @@ export default function Dashboard() {
                         });
 
                         // Save back to localStorage
-                        localStorage.setItem("libraryContent", JSON.stringify(existingLibrary));
+                        localStorage.setItem(
+                          "libraryContent",
+                          JSON.stringify(existingLibrary)
+                        );
 
                         // Redirect to library page
                         window.location.href = "/library";
@@ -475,8 +545,6 @@ export default function Dashboard() {
                       <ImageIcon className="w-4 h-4 mr-2" />
                       {t.contentLibrary}
                     </Button>
-
-
                   </div>
                 </CardContent>
               </Card>
@@ -486,25 +554,29 @@ export default function Dashboard() {
           {/* Sidebar */}
           <div className="space-y-6 ">
             {/* Business Type Quick Setup */}
-            
-              <Card className="bg-[#D9D9D9]/[0.72] ">
-                <CardHeader>
-                  <CardTitle className="text-lg font-montserrat ">Business Type</CardTitle>
-                  <CardDescription>Quick setup for your business</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-2 gap-3 ">
-                    {businessTypes.map(({ icon: Icon, label, value }) => (
-                      <Button key={value} variant="outline" className="h-20 flex-col gap-2 bg-transparent">
-                        <Icon className="w-6 h-6" />
-                        <span className="text-xs">{label}</span>
-                      </Button>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            
-            
+
+            <Card className="bg-[#D9D9D9]/[0.72] ">
+              <CardHeader>
+                <CardTitle className="text-lg font-montserrat ">
+                  Business Type
+                </CardTitle>
+                <CardDescription>Quick setup for your business</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-3 ">
+                  {businessTypes.map(({ icon: Icon, label, value }) => (
+                    <Button
+                      key={value}
+                      variant="outline"
+                      className="h-20 flex-col gap-2 bg-transparent"
+                    >
+                      <Icon className="w-6 h-6" />
+                      <span className="text-xs">{label}</span>
+                    </Button>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
 
             {/* Brand Presets */}
             <Card className="bg-[#D9D9D9]/[0.72] ">
@@ -525,7 +597,9 @@ export default function Dashboard() {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Default Hashtags</label>
+                  <label className="text-sm font-medium">
+                    Default Hashtags
+                  </label>
                   <div className="flex flex-wrap gap-1">
                     <Badge variant="outline" className="text-xs">
                       #EthiopianBusiness
@@ -540,11 +614,9 @@ export default function Dashboard() {
                 </div>
               </CardContent>
             </Card>
-
-            
           </div>
         </div>
       </div>
     </div>
-  )
+  );
 }

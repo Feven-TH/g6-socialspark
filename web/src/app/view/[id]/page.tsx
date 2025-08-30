@@ -1,47 +1,52 @@
-"use client"
+"use client";
 
-import Image from "next/image"
-import { useEffect, useState } from "react"
-import { useParams, useRouter } from "next/navigation"
-import { Card, CardContent, CardHeader, CardTitle } from "../../components/card"
-import { Textarea } from "../../components/textarea"
-import { Badge } from "../../components/badge"
-import { ImageIcon, Camera, Hash, Type, Play, ArrowLeft } from "lucide-react"
+import Image from "next/image";
+import { useEffect, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "../../../components/card";
+import { Textarea } from "../../../components/textarea";
+import { Badge } from "../../../components/badge";
+import { ImageIcon, Camera, Hash, Type, Play, ArrowLeft } from "lucide-react";
 
 type ContentItem = {
-  id: number
-  title: string
-  caption: string
-  hashtags: string[]
-  imageUrl: string
-  videoUrl?: string
-  platform: string
-  type: string
-}
+  id: number;
+  title: string;
+  caption: string;
+  hashtags: string[];
+  imageUrl: string;
+  videoUrl?: string;
+  platform: string;
+  type: string;
+};
 
 export default function Page() {
-  const params = useParams()
-  const id = params?.id
-  const router = useRouter()
-  const [content, setContent] = useState<ContentItem | null>(null)
+  const params = useParams();
+  const id = params?.id;
+  const router = useRouter();
+  const [content, setContent] = useState<ContentItem | null>(null);
 
   useEffect(() => {
-    if (!id) return
+    if (!id) return;
 
-    const stored = localStorage.getItem("libraryContent")
+    const stored = localStorage.getItem("libraryContent");
     if (stored) {
-      const items: ContentItem[] = JSON.parse(stored)
-      const selected = items.find((item) => item.id.toString() === id)
-      if (selected) setContent(selected)
+      const items: ContentItem[] = JSON.parse(stored);
+      const selected = items.find((item) => item.id.toString() === id);
+      if (selected) setContent(selected);
     }
-  }, [id])
+  }, [id]);
 
   if (!content) {
     return (
       <div className="p-8 text-center text-muted-foreground">
         No content to display.
       </div>
-    )
+    );
   }
 
   return (
@@ -74,7 +79,11 @@ export default function Page() {
                   <Type className="w-4 h-4" />
                   <label className="font-medium">Caption</label>
                 </div>
-                <Textarea value={content.caption} readOnly className="min-h-[120px]" />
+                <Textarea
+                  value={content.caption}
+                  readOnly
+                  className="min-h-[120px]"
+                />
               </div>
 
               <div>
@@ -99,7 +108,7 @@ export default function Page() {
                 <label className="font-medium">Preview</label>
               </div>
               <div className="aspect-square bg-muted rounded-lg overflow-hidden flex items-center justify-center relative">
-                {content.type  === "image" ? (
+                {content.type === "image" ? (
                   <Image
                     src={content.imageUrl || "/placeholder.svg"}
                     alt={content.title}
@@ -128,5 +137,5 @@ export default function Page() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

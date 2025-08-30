@@ -1,13 +1,13 @@
 "use client";
-import Link from "next/link"
-import { Button } from "@/app/components/button";
+import Link from "next/link";
+import { Button } from "@/components/button";
 import {
   Card,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/app/components/card";
-import { Badge } from "@/app/components/badge";
+} from "@/components/card";
+import { Badge } from "@/components/badge";
 import {
   Sparkles,
   Video,
@@ -17,8 +17,7 @@ import {
   Users,
   ArrowRight,
 } from "lucide-react";
-import Header from "./components/HomeHeader";
-import {Footer} from "./components/footer";
+import Header from "../components/HomeHeader";
 
 export default function LandingPage() {
   const features = [
@@ -180,8 +179,6 @@ export default function LandingPage() {
           </Button>
         </div>
       </section>
-
-      <Footer />
     </div>
   );
 }

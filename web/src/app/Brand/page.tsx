@@ -1,14 +1,26 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Button } from "../components/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/card"
-import { Input } from "../components/input"
-import { Label } from "../components/label"
-import { Textarea } from "../components/textarea"
-import { Badge } from "../components/badge"
-import Header from "../components/header"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/select"
+import { useState } from "react";
+import { Button } from "@/components/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/card";
+import { Input } from "@/components/input";
+import { Label } from "@/components/label";
+import { Textarea } from "@/components/textarea";
+import { Badge } from "@/components/badge";
+import Header from "@/components/commonheader";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/select";
 import {
   Sparkles,
   Palette,
@@ -23,14 +35,14 @@ import {
   Camera,
   Plus,
   X,
-} from "lucide-react"
-import {Footer} from "../components/footer"
+} from "lucide-react";
 
 export default function BrandSetupPage() {
   const [brandData, setBrandData] = useState({
     businessName: "Addis Coffee House",
     businessType: "cafe",
-    description: "Premium Ethiopian coffee experience in the heart of Addis Ababa",
+    description:
+      "Premium Ethiopian coffee experience in the heart of Addis Ababa",
     primaryColor: "#003366",
     secondaryColor: "#f9c51c",
     accentColor: "#e74c3c",
@@ -38,23 +50,23 @@ export default function BrandSetupPage() {
     defaultHashtags: ["AddisAbebaCafe", "EthiopianCoffee", "LocalBrand"],
     brandVoice: "friendly",
     targetAudience: "coffee-lovers",
-  })
+  });
 
-  const [newHashtag, setNewHashtag] = useState("")
+  const [newHashtag, setNewHashtag] = useState("");
 
   const businessTypes = [
     { value: "cafe", label: "Café/Restaurant", icon: Coffee },
     { value: "retail", label: "Retail/Fashion", icon: ShoppingBag },
     { value: "salon", label: "Beauty/Salon", icon: Scissors },
     { value: "photography", label: "Photography", icon: Camera },
-  ]
+  ];
 
   const brandVoices = [
     { value: "friendly", label: "Friendly & Casual" },
     { value: "professional", label: "Professional & Formal" },
     { value: "playful", label: "Playful & Fun" },
     { value: "elegant", label: "Elegant & Sophisticated" },
-  ]
+  ];
 
   const targetAudiences = [
     { value: "coffee-lovers", label: "Coffee Enthusiasts" },
@@ -62,29 +74,32 @@ export default function BrandSetupPage() {
     { value: "students", label: "Students" },
     { value: "families", label: "Families" },
     { value: "tourists", label: "Tourists" },
-  ]
+  ];
 
   const addHashtag = () => {
-    if (newHashtag.trim() && !brandData.defaultHashtags.includes(newHashtag.trim())) {
+    if (
+      newHashtag.trim() &&
+      !brandData.defaultHashtags.includes(newHashtag.trim())
+    ) {
       setBrandData({
         ...brandData,
         defaultHashtags: [...brandData.defaultHashtags, newHashtag.trim()],
-      })
-      setNewHashtag("")
+      });
+      setNewHashtag("");
     }
-  }
+  };
 
   const removeHashtag = (index: number) => {
     setBrandData({
       ...brandData,
       defaultHashtags: brandData.defaultHashtags.filter((_, i) => i !== index),
-    })
-  }
+    });
+  };
 
   return (
     <div className="min-h-screen bg-background ">
       {/* Header */}
-      <Header/>
+      <Header />
 
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         <div className="space-y-8">
@@ -95,7 +110,9 @@ export default function BrandSetupPage() {
                 <Target className="w-5 h-5" />
                 Business Information
               </CardTitle>
-              <CardDescription>Basic details about your business</CardDescription>
+              <CardDescription>
+                Basic details about your business
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="grid md:grid-cols-2 gap-6">
@@ -104,7 +121,12 @@ export default function BrandSetupPage() {
                   <Input
                     id="businessName"
                     value={brandData.businessName}
-                    onChange={(e) => setBrandData({ ...brandData, businessName: e.target.value })}
+                    onChange={(e) =>
+                      setBrandData({
+                        ...brandData,
+                        businessName: e.target.value,
+                      })
+                    }
                   />
                 </div>
 
@@ -112,7 +134,9 @@ export default function BrandSetupPage() {
                   <Label htmlFor="businessType">Business Type</Label>
                   <Select
                     value={brandData.businessType}
-                    onValueChange={(value:string) => setBrandData({ ...brandData, businessType: value })}//type value is need to be checked 
+                    onValueChange={(value: string) =>
+                      setBrandData({ ...brandData, businessType: value })
+                    } //type value is need to be checked
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -136,7 +160,9 @@ export default function BrandSetupPage() {
                 <Textarea
                   id="description"
                   value={brandData.description}
-                  onChange={(e) => setBrandData({ ...brandData, description: e.target.value })}
+                  onChange={(e) =>
+                    setBrandData({ ...brandData, description: e.target.value })
+                  }
                   placeholder="Describe your business in a few sentences..."
                   className="min-h-[100px]"
                 />
@@ -151,7 +177,9 @@ export default function BrandSetupPage() {
                 <Palette className="w-5 h-5" />
                 Brand Colors
               </CardTitle>
-              <CardDescription>Define your brand&apos;s color palette</CardDescription>
+              <CardDescription>
+                Define your brand&apos;s color palette
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="grid md:grid-cols-3 gap-6">
@@ -162,12 +190,22 @@ export default function BrandSetupPage() {
                       id="primaryColor"
                       type="color"
                       value={brandData.primaryColor}
-                      onChange={(e) => setBrandData({ ...brandData, primaryColor: e.target.value })}
+                      onChange={(e) =>
+                        setBrandData({
+                          ...brandData,
+                          primaryColor: e.target.value,
+                        })
+                      }
                       className="w-16 h-10 p-1 border rounded"
                     />
                     <Input
                       value={brandData.primaryColor}
-                      onChange={(e) => setBrandData({ ...brandData, primaryColor: e.target.value })}
+                      onChange={(e) =>
+                        setBrandData({
+                          ...brandData,
+                          primaryColor: e.target.value,
+                        })
+                      }
                       className="flex-1"
                     />
                   </div>
@@ -180,12 +218,22 @@ export default function BrandSetupPage() {
                       id="secondaryColor"
                       type="color"
                       value={brandData.secondaryColor}
-                      onChange={(e) => setBrandData({ ...brandData, secondaryColor: e.target.value })}
+                      onChange={(e) =>
+                        setBrandData({
+                          ...brandData,
+                          secondaryColor: e.target.value,
+                        })
+                      }
                       className="w-16 h-10 p-1 border rounded"
                     />
                     <Input
                       value={brandData.secondaryColor}
-                      onChange={(e) => setBrandData({ ...brandData, secondaryColor: e.target.value })}
+                      onChange={(e) =>
+                        setBrandData({
+                          ...brandData,
+                          secondaryColor: e.target.value,
+                        })
+                      }
                       className="flex-1"
                     />
                   </div>
@@ -198,12 +246,22 @@ export default function BrandSetupPage() {
                       id="accentColor"
                       type="color"
                       value={brandData.accentColor}
-                      onChange={(e) => setBrandData({ ...brandData, accentColor: e.target.value })}
+                      onChange={(e) =>
+                        setBrandData({
+                          ...brandData,
+                          accentColor: e.target.value,
+                        })
+                      }
                       className="w-16 h-10 p-1 border rounded"
                     />
                     <Input
                       value={brandData.accentColor}
-                      onChange={(e) => setBrandData({ ...brandData, accentColor: e.target.value })}
+                      onChange={(e) =>
+                        setBrandData({
+                          ...brandData,
+                          accentColor: e.target.value,
+                        })
+                      }
                       className="flex-1"
                     />
                   </div>
@@ -211,19 +269,31 @@ export default function BrandSetupPage() {
               </div>
 
               {/* Color Preview */}
-              <div className="p-6 rounded-lg border" style={{ backgroundColor: `${brandData.primaryColor}10` }}>
+              <div
+                className="p-6 rounded-lg border"
+                style={{ backgroundColor: `${brandData.primaryColor}10` }}
+              >
                 <div className="flex items-center gap-4">
                   <div
                     className="w-16 h-16 rounded-lg flex items-center justify-center"
                     style={{ backgroundColor: brandData.primaryColor }}
                   >
-                    <Sparkles className="w-8 h-8" style={{ color: brandData.secondaryColor }} />
+                    <Sparkles
+                      className="w-8 h-8"
+                      style={{ color: brandData.secondaryColor }}
+                    />
                   </div>
                   <div>
-                    <h3 className="text-lg font-semibold" style={{ color: brandData.primaryColor }}>
+                    <h3
+                      className="text-lg font-semibold"
+                      style={{ color: brandData.primaryColor }}
+                    >
                       {brandData.businessName}
                     </h3>
-                    <p className="text-sm" style={{ color: brandData.accentColor }}>
+                    <p
+                      className="text-sm"
+                      style={{ color: brandData.accentColor }}
+                    >
                       Brand Color Preview
                     </p>
                   </div>
@@ -244,7 +314,9 @@ export default function BrandSetupPage() {
             <CardContent>
               <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-8 text-center">
                 <Upload className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-                <p className="text-sm text-muted-foreground mb-4">Drag and drop your logo here, or click to browse</p>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Drag and drop your logo here, or click to browse
+                </p>
                 <Button variant="outline">Choose File</Button>
               </div>
             </CardContent>
@@ -257,7 +329,9 @@ export default function BrandSetupPage() {
                 <Hash className="w-5 h-5" />
                 Default Hashtags
               </CardTitle>
-              <CardDescription>Hashtags that will be automatically suggested for your content</CardDescription>
+              <CardDescription>
+                Hashtags that will be automatically suggested for your content
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex gap-2">
@@ -274,7 +348,11 @@ export default function BrandSetupPage() {
 
               <div className="flex flex-wrap gap-2">
                 {brandData.defaultHashtags.map((hashtag, index) => (
-                  <Badge key={index} variant="secondary" className="flex items-center gap-1">
+                  <Badge
+                    key={index}
+                    variant="secondary"
+                    className="flex items-center gap-1"
+                  >
                     #{hashtag}
                     <Button
                       variant="ghost"
@@ -291,25 +369,32 @@ export default function BrandSetupPage() {
               <div className="space-y-2">
                 <Label>Suggested Ethiopian Business Hashtags</Label>
                 <div className="flex flex-wrap gap-2">
-                  {["EthiopianBusiness", "AddisAbaba", "MadeInEthiopia", "LocalBrand", "EthiopianEntrepreneur"].map(
-                    (suggestion) => (
-                      <Button
-                        key={suggestion}
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          if (!brandData.defaultHashtags.includes(suggestion)) {
-                            setBrandData({
-                              ...brandData,
-                              defaultHashtags: [...brandData.defaultHashtags, suggestion],
-                            })
-                          }
-                        }}
-                      >
-                        #{suggestion}
-                      </Button>
-                    ),
-                  )}
+                  {[
+                    "EthiopianBusiness",
+                    "AddisAbaba",
+                    "MadeInEthiopia",
+                    "LocalBrand",
+                    "EthiopianEntrepreneur",
+                  ].map((suggestion) => (
+                    <Button
+                      key={suggestion}
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        if (!brandData.defaultHashtags.includes(suggestion)) {
+                          setBrandData({
+                            ...brandData,
+                            defaultHashtags: [
+                              ...brandData.defaultHashtags,
+                              suggestion,
+                            ],
+                          });
+                        }
+                      }}
+                    >
+                      #{suggestion}
+                    </Button>
+                  ))}
                 </div>
               </div>
             </CardContent>
@@ -322,7 +407,9 @@ export default function BrandSetupPage() {
                 <Type className="w-5 h-5" />
                 Brand Voice & Audience
               </CardTitle>
-              <CardDescription>Define how your brand communicates</CardDescription>
+              <CardDescription>
+                Define how your brand communicates
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="grid md:grid-cols-2 gap-6">
@@ -330,7 +417,9 @@ export default function BrandSetupPage() {
                   <Label>Brand Voice</Label>
                   <Select
                     value={brandData.brandVoice}
-                    onValueChange={(value:string) => setBrandData({ ...brandData, brandVoice: value })}//type value is need to be checked 
+                    onValueChange={(value: string) =>
+                      setBrandData({ ...brandData, brandVoice: value })
+                    } //type value is need to be checked
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -349,7 +438,9 @@ export default function BrandSetupPage() {
                   <Label>Target Audience</Label>
                   <Select
                     value={brandData.targetAudience}
-                    onValueChange={(value:string) => setBrandData({ ...brandData, targetAudience: value })}//type value is need to be checked 
+                    onValueChange={(value: string) =>
+                      setBrandData({ ...brandData, targetAudience: value })
+                    } //type value is need to be checked
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -376,7 +467,6 @@ export default function BrandSetupPage() {
           </div>
         </div>
       </div>
-      <Footer/>
     </div>
-  )
+  );
 }

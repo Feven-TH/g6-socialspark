@@ -1,15 +1,21 @@
-"use client"
-import Link from "next/link"
-import Image from "next/image"
+"use client";
+import Link from "next/link";
+import Image from "next/image";
 
-import { useState } from "react"
-import { useEffect } from "react"
-import { Button } from "../components/button"
-import { Card, CardContent } from "../components/card"
-import { Input } from "../components/input"
-import { Badge } from "../components/badge"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/select"
-import Header from "../components/header";
+import { useState } from "react";
+import { useEffect } from "react";
+import { Button } from "@/components/button";
+import { Card, CardContent } from "@/components/card";
+import { Input } from "@/components/input";
+import { Badge } from "@/components/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/select";
+import Header from "@/components/commonheader";
 import {
   Sparkles,
   Search,
@@ -28,107 +34,105 @@ import {
   Heart,
   MessageCircle,
   Clock,
-} from "lucide-react"
+} from "lucide-react";
 interface LibraryItem {
-  id: number
-  title: string
-  caption: string
-  hashtags: string[]
-  imageUrl: string
-  platform: string
-  contentType: string
-  type: string
-  videoUrl: string
-  createdAt: string
-  status: string
+  id: number;
+  title: string;
+  caption: string;
+  hashtags: string[];
+  imageUrl: string;
+  platform: string;
+  contentType: string;
+  type: string;
+  videoUrl: string;
+  createdAt: string;
+  status: string;
   engagement: {
-    likes: number
-    comments: number
-    views: number
-  }
+    likes: number;
+    comments: number;
+    views: number;
+  };
 }
 
 const mockContent = [
-    {
-      id: 1,
-      title: "Caramel Macadamia Latte",
-      type: "image",
-      platform: "instagram",
-      createdAt: "2024-01-15",
-      status: "published",
-      engagement: { likes: 45, comments: 8, views: 234 },
-      thumbnail: "/ethiopian-cafe-latte-with-caramel-and-macadamia-nu.png",
-      caption: "Try our new Caramel Macadamia Latte! Perfect coffee blend...",
-      hashtags: ["AddisAbebaCafe", "EthiopianCoffee", "Latte"],
-      videoUrl: "",
-      imageUrl: "/ethiopian-cafe-latte-with-caramel-and-macadamia-nu.png",
-    },
-    {
-      id: 2,
-      title: "Behind the Scenes",
-      type: "video",
-      platform: "tiktok",
-      createdAt: "2024-01-14",
-      status: "draft",
-      engagement: { likes: 0, comments: 0, views: 0 },
-      thumbnail: "/short-video-of-latte-being-made.png",
-      caption: "Watch how we make our signature latte...",
-      hashtags: ["BehindTheScenes", "CoffeeProcess", "Barista"],
-      imageUrl: "/short-video-of-latte-being-made.png",
-    },
-    {
-      id: 3,
-      title: "Weekend Special",
-      type: "image",
-      platform: "instagram",
-      createdAt: "2024-01-13",
-      status: "scheduled",
-      engagement: { likes: 0, comments: 0, views: 0 },
-      thumbnail: "/weekend-coffee-special.png",
-      caption: "Weekend vibes with our special blend...",
-      hashtags: ["WeekendSpecial", "CoffeeLovers", "Relax"],
-      imageUrl: "/weekend-coffee-special.png",
-    },
-    {
-      id: 4,
-      title: "Customer Review",
-      type: "image",
-      platform: "instagram",
-      createdAt: "2024-01-12",
-      status: "published",
-      engagement: { likes: 67, comments: 12, views: 345 },
-      thumbnail: "/happy-customer-with-coffee.png",
-      caption: "Amazing feedback from our lovely customers...",
-      hashtags: ["CustomerLove", "Reviews", "HappyCustomers"],
-      imageUrl: "/happy-customer-with-coffee.png",
-    },
-  ]
-
+  {
+    id: 1,
+    title: "Caramel Macadamia Latte",
+    type: "image",
+    platform: "instagram",
+    createdAt: "2024-01-15",
+    status: "published",
+    engagement: { likes: 45, comments: 8, views: 234 },
+    thumbnail: "/ethiopian-cafe-latte-with-caramel-and-macadamia-nu.png",
+    caption: "Try our new Caramel Macadamia Latte! Perfect coffee blend...",
+    hashtags: ["AddisAbebaCafe", "EthiopianCoffee", "Latte"],
+    videoUrl: "",
+    imageUrl: "/ethiopian-cafe-latte-with-caramel-and-macadamia-nu.png",
+  },
+  {
+    id: 2,
+    title: "Behind the Scenes",
+    type: "video",
+    platform: "tiktok",
+    createdAt: "2024-01-14",
+    status: "draft",
+    engagement: { likes: 0, comments: 0, views: 0 },
+    thumbnail: "/short-video-of-latte-being-made.png",
+    caption: "Watch how we make our signature latte...",
+    hashtags: ["BehindTheScenes", "CoffeeProcess", "Barista"],
+    imageUrl: "/short-video-of-latte-being-made.png",
+  },
+  {
+    id: 3,
+    title: "Weekend Special",
+    type: "image",
+    platform: "instagram",
+    createdAt: "2024-01-13",
+    status: "scheduled",
+    engagement: { likes: 0, comments: 0, views: 0 },
+    thumbnail: "/weekend-coffee-special.png",
+    caption: "Weekend vibes with our special blend...",
+    hashtags: ["WeekendSpecial", "CoffeeLovers", "Relax"],
+    imageUrl: "/weekend-coffee-special.png",
+  },
+  {
+    id: 4,
+    title: "Customer Review",
+    type: "image",
+    platform: "instagram",
+    createdAt: "2024-01-12",
+    status: "published",
+    engagement: { likes: 67, comments: 12, views: 345 },
+    thumbnail: "/happy-customer-with-coffee.png",
+    caption: "Amazing feedback from our lovely customers...",
+    hashtags: ["CustomerLove", "Reviews", "HappyCustomers"],
+    imageUrl: "/happy-customer-with-coffee.png",
+  },
+];
 
 export default function LibraryPage() {
-  const [viewMode, setViewMode] = useState("grid")
-  const [searchQuery, setSearchQuery] = useState("")
-  const [filterType, setFilterType] = useState("all")
-  const [filterPlatform, setFilterPlatform] = useState("all")
+  const [viewMode, setViewMode] = useState("grid");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterType, setFilterType] = useState("all");
+  const [filterPlatform, setFilterPlatform] = useState("all");
   useEffect(() => {
-  localStorage.setItem("libraryContent", JSON.stringify(mockContent))
-}, [])
+    localStorage.setItem("libraryContent", JSON.stringify(mockContent));
+  }, []);
 
-
-  
   const filteredContent = mockContent.filter((item) => {
     const matchesSearch =
       item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.caption.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesType = filterType === "all" || item.type === filterType
-    const matchesPlatform = filterPlatform === "all" || item.platform === filterPlatform
+      item.caption.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesType = filterType === "all" || item.type === filterType;
+    const matchesPlatform =
+      filterPlatform === "all" || item.platform === filterPlatform;
 
-    return matchesSearch && matchesType && matchesPlatform
-  })
+    return matchesSearch && matchesType && matchesPlatform;
+  });
 
   return (
     <div className="min-h-screen bg-background">
-     <Header/>
+      <Header />
 
       <div className="container mx-auto px-4 py-8">
         {/* Filters and Search */}
@@ -194,7 +198,10 @@ export default function LibraryPage() {
         {viewMode === "grid" ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 ">
             {filteredContent.map((item) => (
-              <Card key={item.id} className="group hover:shadow-lg transition-shadow  bg-[#D9D9D9]/[0.72]" >
+              <Card
+                key={item.id}
+                className="group hover:shadow-lg transition-shadow  bg-[#D9D9D9]/[0.72]"
+              >
                 <div className="relative aspect-square overflow-hidden rounded-t-lg">
                   <Image
                     src={item.thumbnail || "/placeholder.svg"}
@@ -205,7 +212,11 @@ export default function LibraryPage() {
                   <div className="absolute top-2 left-2">
                     <Badge
                       variant={
-                        item.status === "published" ? "default" : item.status === "scheduled" ? "secondary" : "outline"
+                        item.status === "published"
+                          ? "default"
+                          : item.status === "scheduled"
+                          ? "secondary"
+                          : "outline"
                       }
                     >
                       {item.status}
@@ -217,13 +228,19 @@ export default function LibraryPage() {
                     ) : (
                       <Video className="w-4 h-4 text-white bg-black/50 rounded p-0.5" />
                     )}
-                    {item.type === "video" && <Video className="w-4 h-4 text-white bg-black/50 rounded p-0.5" />}
+                    {item.type === "video" && (
+                      <Video className="w-4 h-4 text-white bg-black/50 rounded p-0.5" />
+                    )}
                   </div>
                   {/* Hover Overlay Buttons */}
                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
                     <div className="flex gap-2">
                       <Link href={`/view/${item.id}`} passHref>
-                        <Button size="sm" variant="secondary" className="flex items-center">
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          className="flex items-center"
+                        >
                           <Eye className="w-4 h-4" />
                         </Button>
                       </Link>
@@ -241,9 +258,9 @@ export default function LibraryPage() {
                               platform: item.platform,
                               contentType: item.type,
                               title: item.title,
-                            }),
-                          )
-                          window.location.href = "/editor"
+                            })
+                          );
+                          window.location.href = "/editor";
                         }}
                       >
                         <Edit className="w-4 h-4" />
@@ -253,7 +270,9 @@ export default function LibraryPage() {
                 </div>
                 <CardContent className="p-4">
                   <h3 className="font-semibold mb-2 truncate">{item.title}</h3>
-                  <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{item.caption}</p>
+                  <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
+                    {item.caption}
+                  </p>
 
                   {item.status === "published" && (
                     <div className="flex items-center gap-4 text-xs text-muted-foreground mb-3">
@@ -330,15 +349,17 @@ export default function LibraryPage() {
                             item.status === "published"
                               ? "default"
                               : item.status === "scheduled"
-                                ? "secondary"
-                                : "outline"
+                              ? "secondary"
+                              : "outline"
                           }
                         >
                           {item.status}
                         </Badge>
                       </div>
 
-                      <p className="text-sm text-muted-foreground mb-2 line-clamp-1">{item.caption}</p>
+                      <p className="text-sm text-muted-foreground mb-2 line-clamp-1">
+                        {item.caption}
+                      </p>
 
                       <div className="flex items-center gap-4 text-xs text-muted-foreground">
                         <div className="flex items-center gap-1">
@@ -350,7 +371,11 @@ export default function LibraryPage() {
                           {item.platform}
                         </div>
                         <div className="flex items-center gap-1">
-                          {item.type === "image" ? <ImageIcon className="w-3 h-3" /> : <Video className="w-3 h-3" />}
+                          {item.type === "image" ? (
+                            <ImageIcon className="w-3 h-3" />
+                          ) : (
+                            <Video className="w-3 h-3" />
+                          )}
                           {item.type}
                         </div>
                         <div className="flex items-center gap-1">
@@ -378,42 +403,47 @@ export default function LibraryPage() {
                           size="sm"
                           variant="outline"
                           className="flex items-center"
-                         
+                          // TS-safe onClick handler
+                          onClick={() => {
+                            // Get library items from localStorage and parse as LibraryItem[]
+                            const libraryItems: LibraryItem[] = JSON.parse(
+                              localStorage.getItem("libraryContent") || "[]"
+                            );
 
-                        // TS-safe onClick handler
-                        onClick={() => {
-                          // Get library items from localStorage and parse as LibraryItem[]
-                          const libraryItems: LibraryItem[] = JSON.parse(
-                            localStorage.getItem("libraryContent") || "[]"
-                          )
+                            // Check if this item already exists
+                            const exists = libraryItems.some(
+                              (i) => i.id === item.id
+                            );
+                            if (!exists) {
+                              const newItem: LibraryItem = {
+                                id: item.id,
+                                title: item.title,
+                                caption: item.caption,
+                                hashtags: item.hashtags,
+                                imageUrl: item.thumbnail,
+                                platform: item.platform,
+                                contentType: item.type,
+                                type: item.type,
+                                videoUrl: item.videoUrl || "",
+                                createdAt: item.createdAt,
+                                status: item.status,
+                                engagement: item.engagement,
+                              };
 
-                          // Check if this item already exists
-                          const exists = libraryItems.some((i) => i.id === item.id)
-                          if (!exists) {
-                            const newItem: LibraryItem = {
-                              id: item.id,
-                              title: item.title,
-                              caption: item.caption,
-                              hashtags: item.hashtags,
-                              imageUrl: item.thumbnail,
-                              platform: item.platform,
-                              contentType: item.type,
-                              type: item.type,
-                              videoUrl: item.videoUrl || "",
-                              createdAt: item.createdAt,
-                              status: item.status,
-                              engagement: item.engagement,
+                              libraryItems.push(newItem);
+                              localStorage.setItem(
+                                "libraryContent",
+                                JSON.stringify(libraryItems)
+                              );
                             }
 
-                            libraryItems.push(newItem)
-                            localStorage.setItem("libraryContent", JSON.stringify(libraryItems))
-                          }
-
-                          // Save the current item for viewing
-                          localStorage.setItem("viewContent", JSON.stringify(item))
-                          window.location.href = `/view/${item.id}`
-                        }}
-
+                            // Save the current item for viewing
+                            localStorage.setItem(
+                              "viewContent",
+                              JSON.stringify(item)
+                            );
+                            window.location.href = `/view/${item.id}`;
+                          }}
                         >
                           View
                         </Button>
@@ -432,9 +462,9 @@ export default function LibraryPage() {
                               platform: item.platform,
                               contentType: item.type,
                               title: item.title,
-                            }),
-                          )
-                          window.location.href = "/editor"
+                            })
+                          );
+                          window.location.href = "/editor";
                         }}
                       >
                         <Edit className="w-4 h-4 mr-2" />
@@ -453,9 +483,9 @@ export default function LibraryPage() {
                               platform: item.platform,
                               contentType: item.type,
                               title: item.title,
-                            }),
-                          )
-                          window.location.href = "/scheduler"
+                            })
+                          );
+                          window.location.href = "/scheduler";
                         }}
                       >
                         <Clock className="w-4 h-4 mr-2" />
@@ -482,7 +512,9 @@ export default function LibraryPage() {
             </div>
             <h3 className="text-lg font-semibold mb-2">No content found</h3>
             <p className="text-muted-foreground mb-4">
-              {searchQuery ? "Try adjusting your search terms" : "Start creating your first piece of content"}
+              {searchQuery
+                ? "Try adjusting your search terms"
+                : "Start creating your first piece of content"}
             </p>
             <Button asChild>
               <Link href="/">
@@ -494,5 +526,5 @@ export default function LibraryPage() {
         )}
       </div>
     </div>
-  )
+  );
 }

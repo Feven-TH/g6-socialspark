@@ -1,17 +1,23 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import Image from "next/image"
-import { Button } from "@/app/components/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/card"
-import { Footer } from "@/app/components/footer"
-import { Textarea } from "@/app/components/textarea"
-import { Input } from "@/app/components/input"
-import { Label } from "@/app/components/label"
-import { Badge } from "@/app/components/badge"
-import { Slider } from "@/app/components/slider"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/app/components/select"
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import Image from "next/image";
+import { Button } from "@/components/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/card";
+import { Footer } from "@/components/footer";
+import { Textarea } from "@/components/textarea";
+import { Input } from "@/components/input";
+import { Label } from "@/components/label";
+import { Badge } from "@/components/badge";
+import { Slider } from "@/components/slider";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/select";
 import {
   Type,
   Layers,
@@ -29,37 +35,47 @@ import {
   Eye,
   EyeOff,
   Sparkles,
-} from "lucide-react"
+} from "lucide-react";
 
 export default function EditorPage() {
-  const router = useRouter()
+  const router = useRouter();
   const [caption, setCaption] = useState(
-    "try our new caramel Macadamia Latte !Perfect coffee blend with sweet and creamy macadamia. come today and experience the unique taste",
-  )
-  const [hashtags, setHashtags] = useState(["AddisAbabaCafe", "EthiopianCoffee", "Latte"])
-  const [newHashtag, setNewHashtag] = useState("")
-  const [textAlign, setTextAlign] = useState<"left" | "center" | "right">("left")
-  const [fontSize, setFontSize] = useState([16])
-  const [textColor, setTextColor] = useState("#000000")
-  const [backgroundColor, setBackgroundColor] = useState("#ffffff")
-  const [textVisible, setTextVisible] = useState(true)
-  const [backgroundVisible, setBackgroundVisible] = useState(true)
+    "try our new caramel Macadamia Latte !Perfect coffee blend with sweet and creamy macadamia. come today and experience the unique taste"
+  );
+  const [hashtags, setHashtags] = useState([
+    "AddisAbabaCafe",
+    "EthiopianCoffee",
+    "Latte",
+  ]);
+  const [newHashtag, setNewHashtag] = useState("");
+  const [textAlign, setTextAlign] = useState<"left" | "center" | "right">(
+    "left"
+  );
+  const [fontSize, setFontSize] = useState([16]);
+  const [textColor, setTextColor] = useState("#000000");
+  const [backgroundColor, setBackgroundColor] = useState("#ffffff");
+  const [textVisible, setTextVisible] = useState(true);
+  const [backgroundVisible, setBackgroundVisible] = useState(true);
 
   const addHashtag = () => {
-    if (newHashtag.trim() && !hashtags.includes(newHashtag.trim()) && hashtags.length < 30) {
-      setHashtags([...hashtags, newHashtag.trim()])
-      setNewHashtag("")
+    if (
+      newHashtag.trim() &&
+      !hashtags.includes(newHashtag.trim()) &&
+      hashtags.length < 30
+    ) {
+      setHashtags([...hashtags, newHashtag.trim()]);
+      setNewHashtag("");
     }
-  }
+  };
 
   const removeHashtag = (hashtag: string) => {
-    setHashtags(hashtags.filter((h) => h !== hashtag))
-  }
+    setHashtags(hashtags.filter((h) => h !== hashtag));
+  };
 
   const brandPresets = [
     { name: "Yellow", color: "#F59E0B" },
     { name: "Blue", color: "#1E40AF" },
-  ]
+  ];
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -110,7 +126,9 @@ export default function EditorPage() {
               <div className="w-6 h-6 bg-gray-300 rounded flex items-center justify-center">
                 <Eye className="w-4 h-4 text-gray-600" />
               </div>
-              <CardTitle className="text-lg font-medium">Visual Preview</CardTitle>
+              <CardTitle className="text-lg font-medium">
+                Visual Preview
+              </CardTitle>
               <Button variant="ghost" size="sm" className="ml-auto">
                 <Type className="w-4 h-4" />
               </Button>
@@ -165,7 +183,14 @@ export default function EditorPage() {
                   <div className="w-full h-2 bg-black rounded-full mb-2"></div>
                   <span className="text-sm">{fontSize[0]}px</span>
                 </div>
-                <Slider min={12} max={32} step={1} value={fontSize} onValueChange={setFontSize} className="mt-2" />
+                <Slider
+                  min={12}
+                  max={32}
+                  step={1}
+                  value={fontSize}
+                  onValueChange={setFontSize}
+                  className="mt-2"
+                />
               </div>
 
               <div>
@@ -182,7 +207,9 @@ export default function EditorPage() {
               </div>
 
               <div>
-                <Label className="text-sm font-medium">Background overlay</Label>
+                <Label className="text-sm font-medium">
+                  Background overlay
+                </Label>
                 <div className="flex items-center gap-3 mt-2">
                   <div className="w-8 h-8 bg-white border rounded"></div>
                   <Input
@@ -226,14 +253,30 @@ export default function EditorPage() {
               <div className="space-y-2">
                 <div className="flex items-center justify-between py-2">
                   <span className="text-sm">text overlay</span>
-                  <Button variant="ghost" size="sm" onClick={() => setTextVisible(!textVisible)}>
-                    {textVisible ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setTextVisible(!textVisible)}
+                  >
+                    {textVisible ? (
+                      <Eye className="w-4 h-4" />
+                    ) : (
+                      <EyeOff className="w-4 h-4" />
+                    )}
                   </Button>
                 </div>
                 <div className="flex items-center justify-between py-2">
                   <span className="text-sm">Background image</span>
-                  <Button variant="ghost" size="sm" onClick={() => setBackgroundVisible(!backgroundVisible)}>
-                    {backgroundVisible ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setBackgroundVisible(!backgroundVisible)}
+                  >
+                    {backgroundVisible ? (
+                      <Eye className="w-4 h-4" />
+                    ) : (
+                      <EyeOff className="w-4 h-4" />
+                    )}
                   </Button>
                 </div>
               </div>
@@ -293,7 +336,9 @@ export default function EditorPage() {
               className="min-h-[100px] resize-none"
               placeholder="Write your caption here..."
             />
-            <div className="text-right text-sm text-gray-500 mt-1">{caption.length}/2200 characters</div>
+            <div className="text-right text-sm text-gray-500 mt-1">
+              {caption.length}/2200 characters
+            </div>
           </div>
 
           {/* Hashtags Section */}
@@ -310,27 +355,35 @@ export default function EditorPage() {
                 onKeyPress={(e) => e.key === "Enter" && addHashtag()}
                 className="flex-1"
               />
-              <Button onClick={addHashtag} className="bg-blue-900 text-white hover:bg-blue-800">
+              <Button
+                onClick={addHashtag}
+                className="bg-blue-900 text-white hover:bg-blue-800"
+              >
                 <Plus className="w-4 h-4" />
               </Button>
             </div>
             <div className="flex flex-wrap gap-2 mb-2">
               {hashtags.map((hashtag, index) => (
-                <Badge key={index} className="bg-orange-500 text-white hover:bg-orange-600 flex items-center gap-1">
+                <Badge
+                  key={index}
+                  className="bg-orange-500 text-white hover:bg-orange-600 flex items-center gap-1"
+                >
                   #{hashtag}
-                  <button onClick={() => removeHashtag(hashtag)} className="ml-1 hover:text-gray-200">
+                  <button
+                    onClick={() => removeHashtag(hashtag)}
+                    className="ml-1 hover:text-gray-200"
+                  >
                     <X className="w-3 h-3" />
                   </button>
                 </Badge>
               ))}
             </div>
-            <div className="text-sm text-gray-500">{hashtags.length}/30 hashtags</div>
+            <div className="text-sm text-gray-500">
+              {hashtags.length}/30 hashtags
+            </div>
           </div>
         </div>
       </div>
-
-      
-      <Footer />
     </div>
-  )
+  );
 }
