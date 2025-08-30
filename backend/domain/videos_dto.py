@@ -15,7 +15,7 @@ class Shot(BaseModel):
     duration: int = Field(
         description="The duration of the scene in seconds, between 3 - 5 (inclusive)"
     )
-    text: str = Field(description="The description of the video scene")
+    text: str = Field(description="a short phrase describing a scene")
 
 
 class StoryboardResponse(BaseModel):
