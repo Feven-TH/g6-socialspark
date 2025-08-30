@@ -384,6 +384,7 @@ export default function EditorPage() {
           </div>
         </div>
       </div>
+      <Footer/>
     </div>
   );
 }
