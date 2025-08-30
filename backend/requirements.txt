@@ -18,7 +18,9 @@ email-validator==2.3.0
 fastapi==0.116.1
 fastapi-cli==0.0.8
 fastapi-cloud-cli==0.1.5
+ffmpeg-python==0.2.0
 filetype==1.2.0
+future==1.0.0
 google-ai-generativelanguage==0.6.18
 google-api-core==2.25.1
 google-auth==2.40.3
