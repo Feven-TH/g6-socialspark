@@ -33,9 +33,8 @@ import {
   Play,
   ArrowLeft,
 } from "lucide-react";
-import Footer from "@/components/footer";
-import Schedulerheader from "@/components/schedulerheader";
 
+import Schedulerheader from "@/components/schedulerHeader";
 
 // ----- Types -----
 interface EditorContent {
@@ -359,8 +358,6 @@ export default function SchedulerPage() {
           </div>
         </div>
       </div>
-
-      <Footer />
     </div>
   );
 }

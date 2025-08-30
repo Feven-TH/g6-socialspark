@@ -1,8 +1,14 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+<<<<<<< HEAD
 import { Button } from "@/app/components/button";
 import Header from "./components/HomeHeader";
  import Footer from "./components/Footer";
+=======
+import { Button } from "@/components/button";
+import Header from "../components/HomeHeader";
+import { Footer } from "../components/footer";
+>>>>>>> origin/Web
 
 export default function NotFound() {
   return (
