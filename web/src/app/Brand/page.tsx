@@ -24,8 +24,7 @@ import {
   Plus,
   X,
 } from "lucide-react"
-import {Footer} from "../components/footer"
-
+import Footer from "../components/Footer"
 export default function BrandSetupPage() {
   const [brandData, setBrandData] = useState({
     businessName: "Addis Coffee House",
