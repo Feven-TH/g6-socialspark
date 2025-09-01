@@ -464,7 +464,7 @@ export default function LibraryPage() {
                               title: item.title,
                             })
                           );
-                          window.location.href = "/editor";
+                          window.location.href = `/editor/${item.id}`;
                         }}
                       >
                         <Edit className="w-4 h-4 mr-2" />
