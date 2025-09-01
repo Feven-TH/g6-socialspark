@@ -1,11 +1,17 @@
-import ffmpeg
 from infrastructure.celery_app import celery_app
 from infrastructure.storage_service import upload_file, get_download_url
+from infrastructure.stable_horde_service import StableHordeService
 from dotenv import load_dotenv
-import requests
 import os
+import requests
 import tempfile
 import uuid
+import ffmpeg
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 load_dotenv()
 
@@ -68,3 +74,68 @@ def render_video(self, payload):
         clips.append(video_url)
         durations.append(shot["duration"])
     return serve_video(clips, durations)
+
+
+@celery_app.task(bind=True, time_limit=900, soft_time_limit=800)  # 15 min timeout
+def render_image(self, image_data):
+    """
+    Celery task to render an image using Stable Horde API.
+    """
+    try:
+        logger.info(f"Starting render_image task with data: {image_data}")
+        
+        # Update task status
+        self.update_state(state='PROCESSING', meta={'progress': 10, 'message': 'Starting image generation'})
+        
+        prompt = image_data['prompt_used']
+        style = image_data['style']
+        aspect_ratio = image_data['aspect_ratio']
+        platform = image_data['platform']
+        
+        logger.info(f"Extracted parameters - Prompt: {prompt[:50]}..., Style: {style}, Aspect: {aspect_ratio}")
+        
+        # Initialize Stable Horde service
+        logger.info("Initializing Stable Horde service")
+        stable_horde = StableHordeService()
+        
+        # Update progress
+        self.update_state(state='PROCESSING', meta={'progress': 20, 'message': 'Submitting to Stable Horde'})
+        
+        # Generate image using Stable Horde
+        logger.info("Calling Stable Horde generate_image")
+        result = stable_horde.generate_image(
+            prompt=prompt,
+            style=style,
+            aspect_ratio=aspect_ratio
+        )
+        
+        logger.info(f"Stable Horde returned result: {result}")
+        
+        # Update progress
+        self.update_state(state='PROCESSING', meta={'progress': 90, 'message': 'Processing complete'})
+        
+        final_result = {
+            'status': 'completed',
+            'image_url': result['image_url'],
+            'prompt_used': prompt,
+            'style': style,
+            'aspect_ratio': aspect_ratio,
+            'platform': platform,
+            'metadata': {
+                'seed': result.get('seed'),
+                'worker_id': result.get('worker_id'),
+                'worker_name': result.get('worker_name'),
+                'model': result.get('model')
+            }
+        }
+        
+        logger.info(f"Task completed successfully: {final_result}")
+        return final_result
+        
+    except Exception as e:
+        logger.error(f"Error in render_image task: {str(e)}", exc_info=True)
+        self.update_state(
+            state='FAILURE',
+            meta={'error': str(e), 'message': f'Image generation failed: {str(e)}'}
+        )
+        raise
