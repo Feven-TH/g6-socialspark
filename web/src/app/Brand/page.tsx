@@ -1,6 +1,5 @@
 "use client";
-
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/button";
 import {
   Card,
@@ -37,21 +36,46 @@ import {
   X,
 } from "lucide-react";
 
+interface Brand {
+  businessName: string;
+  businessType: string;
+  description: string;
+  primaryColor: string;
+  secondaryColor: string;
+  accentColor: string;
+  logoUrl?: string;
+  defaultHashtags: string[];
+  brandVoice: string;
+  targetAudience: string;
+}
+
 export default function BrandSetupPage() {
-  const [brandData, setBrandData] = useState({
-    businessName: "Addis Coffee House",
+  const [brandData, setBrandData] = useState<Brand>({
+    businessName: "",
     businessType: "cafe",
-    description:
-      "Premium Ethiopian coffee experience in the heart of Addis Ababa",
-    primaryColor: "#003366",
-    secondaryColor: "#f9c51c",
-    accentColor: "#e74c3c",
+    description: "",
+    primaryColor: "#000000",
+    secondaryColor: "#ffffff",
+    accentColor: "#ff0000",
     logoUrl: "",
-    defaultHashtags: ["AddisAbebaCafe", "EthiopianCoffee", "LocalBrand"],
+    defaultHashtags: [],
     brandVoice: "friendly",
     targetAudience: "coffee-lovers",
   });
 
+  
+  useEffect(() => {
+    const storedBrand = localStorage.getItem("brandSetting");
+    const storedPreset = localStorage.getItem("brandPreset");
+
+    if (storedBrand) {
+      setBrandData(JSON.parse(storedBrand));
+    } else if (storedPreset) {
+      setBrandData(JSON.parse(storedPreset));
+    }
+  }, []);
+
+  
   const [newHashtag, setNewHashtag] = useState("");
 
   const businessTypes = [
@@ -96,6 +120,12 @@ export default function BrandSetupPage() {
     });
   };
 
+  const saveBrand = () => {
+    localStorage.setItem("brandSetting", JSON.stringify(brandData));
+    alert("Brand saved successfully");
+    window.location.href = "/dashboard";
+  };
+
   return (
     <div className="min-h-screen bg-background ">
       {/* Header */}
@@ -136,7 +166,7 @@ export default function BrandSetupPage() {
                     value={brandData.businessType}
                     onValueChange={(value: string) =>
                       setBrandData({ ...brandData, businessType: value })
-                    } //type value is need to be checked
+                    }
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -312,7 +342,7 @@ export default function BrandSetupPage() {
               <CardDescription>Upload your business logo</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-8 text-center">
+              <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-8 text-center cursor-pointer">
                 <Upload className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
                 <p className="text-sm text-muted-foreground mb-4">
                   Drag and drop your logo here, or click to browse
@@ -419,7 +449,7 @@ export default function BrandSetupPage() {
                     value={brandData.brandVoice}
                     onValueChange={(value: string) =>
                       setBrandData({ ...brandData, brandVoice: value })
-                    } //type value is need to be checked
+                    }
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -440,7 +470,7 @@ export default function BrandSetupPage() {
                     value={brandData.targetAudience}
                     onValueChange={(value: string) =>
                       setBrandData({ ...brandData, targetAudience: value })
-                    } //type value is need to be checked
+                    }
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -460,7 +490,7 @@ export default function BrandSetupPage() {
 
           {/* Save Button */}
           <div className="flex justify-end">
-            <Button size="lg">
+            <Button size="lg" onClick={saveBrand}>
               <Save className="w-4 h-4 mr-2" />
               Save Brand Settings
             </Button>
