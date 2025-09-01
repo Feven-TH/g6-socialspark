@@ -11,6 +11,7 @@ Before you begin, ensure you have the following installed and configured:
 3.  **[Redis](https://redis.io/)** (Instructions are below on how to run with Docker)
 4.  **[Pixabay API key](https://pixabay.com/api/docs/)**
 5.  **[Gemini API key](https://ai.google.dev/pricing)**
+6.  **[Freesound API key](https://freesound.org/docs/api/)**
 
 ## Setup Instructions
 
