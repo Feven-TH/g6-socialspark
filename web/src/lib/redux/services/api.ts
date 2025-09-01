@@ -17,11 +17,10 @@ import type {
 
 export const socialSparkApi = createApi({
   reducerPath: "socialSparkApi",
-  baseQuery: fetchBaseQuery({ baseUrl: "/api" }), 
+  baseQuery: fetchBaseQuery({ baseUrl: "http://localhost:8000" }),
   tagTypes: ["Draft", "Task"],
 
   endpoints: (builder) => ({
-   
     generateCaption: builder.mutation<
       GenerateCaptionResponse,
       GenerateCaptionRequest
@@ -33,7 +32,6 @@ export const socialSparkApi = createApi({
       }),
     }),
 
-   
     generateImage: builder.mutation<
       GenerateImageResponse,
       GenerateImageRequest
@@ -45,7 +43,6 @@ export const socialSparkApi = createApi({
       }),
     }),
 
-
     generateStoryboard: builder.mutation<
       GenerateStoryboardResponse,
       GenerateStoryboardRequest
@@ -56,7 +53,6 @@ export const socialSparkApi = createApi({
         body,
       }),
     }),
-
 
     renderVideo: builder.mutation<RenderVideoResponse, RenderVideoRequest>({
       query: (body) => ({
@@ -82,7 +78,6 @@ export const socialSparkApi = createApi({
       invalidatesTags: ["Draft"],
     }),
 
-   
     schedulePost: builder.mutation<ScheduleResponse, ScheduleRequest>({
       query: (body) => ({
         url: "/schedule",
