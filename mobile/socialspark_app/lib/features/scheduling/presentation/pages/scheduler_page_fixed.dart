@@ -30,9 +30,11 @@ class _SchedulerPageState extends State<SchedulerPage> {
     // Simulate network delay
     Future.delayed(const Duration(seconds: 2), () {
       setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Content shared successfully!')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Content shared successfully!')),
+        );
+      }
     });
   }
 
@@ -59,7 +61,6 @@ class _SchedulerPageState extends State<SchedulerPage> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return MainScaffold(
       currentIndex: 1, // Keep the library tab highlighted
       child: Column(

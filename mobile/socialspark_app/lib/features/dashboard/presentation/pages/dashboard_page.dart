@@ -13,10 +13,16 @@ class _DashboardPageState extends State<DashboardPage> {
 
   late final pages = [
     _buildHomeContent(), // 👈 replaced with full landing page
-    const Center(child: Text("Library")),
+    _buildLibraryContent(),
     const Center(child: Text("Brand")),
     const Center(child: Text("Settings")),
   ];
+
+  Widget _buildLibraryContent() {
+    return const Center(
+      child: Text("Swipe up from the bottom to see the library"),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -59,7 +65,14 @@ class _DashboardPageState extends State<DashboardPage> {
   Widget _navItem(IconData icon, String label, int idx) {
     final selected = _index == idx;
     return InkWell(
-      onTap: () => setState(() => _index = idx),
+      onTap: () {
+        if (idx == 1) {
+          // Navigate to Library page when Library tab is tapped
+          context.go('/library');
+        } else {
+          setState(() => _index = idx);
+        }
+      },
       child: Column(
         mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.center,

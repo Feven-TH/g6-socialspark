@@ -1,11 +1,10 @@
-
 // lib/config/router/app_router.dart
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 // import 'package:socialspark_app/features/authentication/presentation/pages/signup_page.dart';
 import 'package:socialspark_app/features/brand/presentation/controller/brand_setup_controller.dart';
-
+import 'package:socialspark_app/features/library/presentation/pages/library_page.dart';
 import '../../core/services/session_store.dart';
 
 // PAGES
@@ -51,7 +50,15 @@ GoRouter buildRouter(SessionStore session) {
               builder: (_, __) => const AboutUsPage(),
             ),
           ]),
-      GoRoute(path: '/signup', builder: (_, __) => const SignUpPage()),
+      GoRoute(
+        path: '/signup',
+        builder: (_, __) => const SignUpPage(),
+      ),
+      GoRoute(
+        path: '/library',
+        name: 'library',
+        builder: (_, __) => const LibraryPage(),
+      ),
     ],
 
     // Stage-based redirect, but ALWAYS allow staying on /splash
@@ -72,9 +79,10 @@ GoRouter buildRouter(SessionStore session) {
         case AppStage.brandSetup:
           return state.matchedLocation == '/brand' ? null : '/brand';
         case AppStage.home:
-          // Allow both /home and /home/about
+          // Allow /home, /home/about, and /library
           if (state.matchedLocation == '/home' ||
-              state.matchedLocation == '/home/about') {
+              state.matchedLocation == '/home/about' ||
+              state.matchedLocation == '/library') {
             return null;
           }
           return '/home';
