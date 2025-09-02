@@ -133,6 +133,26 @@ class LibraryService {
       throw error;
     }
   }
+  // Save editor content
+  saveEditorContent(content: EditorContent): void {
+    try {
+      localStorage.setItem("editorContent", JSON.stringify(content));
+    } catch (error) {
+      console.error("Failed to save editor content:", error);
+      throw error;
+    }
+  }
+
+  // Save scheduler content
+  saveSchedulerContent(content: SchedulerContent): void {
+    try {
+      localStorage.setItem("schedulerContent", JSON.stringify(content));
+    } catch (error) {
+      console.error("Failed to save scheduler content:", error);
+      throw error;
+    }
+  }
 }
+
 export const libraryService = new LibraryService();
 export default libraryService;
