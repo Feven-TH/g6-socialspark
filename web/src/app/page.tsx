@@ -69,7 +69,10 @@ export default function LandingPage() {
     <div className="min-h-screen bg-background">
       <Header />
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-primary/5 via-background to-secondary/5">
+      <section
+        id="hero"
+        className="relative overflow-hidden bg-gradient-to-br from-primary/5 via-background to-secondary/5"
+      >
         <div className="container mx-auto px-4 py-20">
           <div className="text-center max-w-4xl mx-auto">
             <Badge className="mb-6 bg-secondary/20 text-secondary-foreground border-secondary/30">
@@ -96,18 +99,10 @@ export default function LandingPage() {
                 className="h-14 px-8 text-lg font-semibold"
                 asChild
               >
-                <Link href="/auth/signup">
+                <Link href="/library">
                   Start Creating Free
                   <ArrowRight className="w-5 h-5 ml-2" />
                 </Link>
-              </Button>
-              <Button
-                variant="outline"
-                size="lg"
-                className="h-14 px-8 text-lg bg-transparent"
-                asChild
-              >
-                <Link href="/auth/login">Sign In</Link>
               </Button>
             </div>
           </div>
@@ -172,7 +167,7 @@ export default function LandingPage() {
             className="h-14 px-8 text-lg font-semibold"
             asChild
           >
-            <Link href="/auth/signup">
+            <Link href="/library">
               Start Your Free Trial
               <ArrowRight className="w-5 h-5 ml-2" />
             </Link>
