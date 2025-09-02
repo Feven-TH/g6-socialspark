@@ -30,7 +30,7 @@ export default function EmptyState({
       </p>
       <div className="flex gap-3 justify-center">
         <Button asChild>
-          <Link href="/">
+          <Link href="/dashboard">
             <Sparkles className="w-4 h-4 mr-2" />
             Create Content
           </Link>

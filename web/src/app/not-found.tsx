@@ -48,7 +48,6 @@ export default function NotFound() {
       </main>
 
       {/* Footer */}
-      <Footer />
     </div>
   );
 }
