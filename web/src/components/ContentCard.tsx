@@ -47,14 +47,14 @@ export default function ContentCard({
         <div className="absolute top-2 left-2">
           <Badge
             variant={
-              item.type === "draft"
+              item.status === "draft"
                 ? "default"
-                : item.type === "scheduled"
+                : item.status === "scheduled"
                 ? "secondary"
                 : "outline"
             }
           >
-            {item.type}
+            {item.status}
           </Badge>
         </div>
         <div className="absolute top-2 right-2 flex gap-1">
