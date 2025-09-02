@@ -152,6 +152,71 @@ class LibraryService {
       throw error;
     }
   }
+  // Export image
+  async exportImage(item: LibraryItem): Promise<Blob> {
+    return new Promise((resolve, reject) => {
+      try {
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+        const img = new window.Image();
+
+        img.onload = () => {
+          canvas.width = img.width;
+          canvas.height = img.height;
+          ctx?.drawImage(img, 0, 0);
+
+          // Add text overlay if needed
+          if (ctx) {
+            ctx.fillStyle = "white";
+            ctx.font = "16px Arial";
+            ctx.fillText(item.caption, 10, img.height - 20);
+          }
+
+          canvas.toBlob((blob) => {
+            if (blob) {
+              resolve(blob);
+            } else {
+              reject(new Error("Failed to create blob"));
+            }
+          }, "image/png");
+        };
+
+        img.onerror = () => reject(new Error("Failed to load image"));
+        img.src = item.imageUrl;
+      } catch (error) {
+        reject(error);
+      }
+    });
+  }
+
+  // Copy text to clipboard
+  async copyToClipboard(text: string): Promise<void> {
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch (error) {
+      console.error("Failed to copy text:", error);
+      throw error;
+    }
+  }
+
+  // Filter content based on search and filters
+  filterContent(
+    content: LibraryItem[],
+    searchQuery: string,
+    filterType: string,
+    filterPlatform: string
+  ): LibraryItem[] {
+    return content.filter((item) => {
+      const matchesSearch =
+        item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.caption.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesType = filterType === "all" || item.type === filterType;
+      const matchesPlatform =
+        filterPlatform === "all" || item.platform === filterPlatform;
+
+      return matchesSearch && matchesType && matchesPlatform;
+    });
+  }
 }
 
 export const libraryService = new LibraryService();
