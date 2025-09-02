@@ -15,12 +15,17 @@ class Shot(BaseModel):
     duration: int = Field(
         description="The duration of the scene in seconds, between 3 - 5 (inclusive)"
     )
-    text: str = Field(description="The description of the video scene")
+    text: str = Field(description="a short phrase describing a scene")
+
+
+class StoryboardResponse(BaseModel):
+    shots: list[Shot] = Field(description="A list of descriptions for video scenes")
     music: str = Field(
         description="One word description of the genre of the background music",
         examples=["upbeat", "downbeat", "jazz", "classical"],
     )
 
 
-class StoryboardResponse(BaseModel):
-    shots: list[Shot] = Field(description="A list of descriptions for video scenes")
+class RenderRequest(BaseModel):
+    shots: list[Shot]
+    music: str
