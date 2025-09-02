@@ -24,16 +24,17 @@ const Header = () => {
         <nav className="flex items-center gap-6 text-sm font-medium">
           {/* Desktop links */}
           <Link
+            href="#hero"
+            className="hidden md:block text-[#0D2A4B] hover:text-[#2EC4B6]"
+          >
+            Hero
+          </Link>
+
+          <Link
             href="#features"
             className="hidden md:block text-[#0D2A4B] hover:text-[#2EC4B6]"
           >
             Features
-          </Link>
-          <Link
-            href="/auth/login"
-            className="hidden md:block text-[#0D2A4B] hover:text-[#2EC4B6]"
-          >
-            Sign in
           </Link>
 
           {/* Always show Get started */}
@@ -41,7 +42,7 @@ const Header = () => {
             asChild
             className="bg-[#FBBF24] text-[#0D2A4B] hover:bg-[#facc15] rounded-lg px-4 py-2 font-semibold"
           >
-            <Link href="/auth/signup">Get started</Link>
+            <Link href="/library">Get started</Link>
           </Button>
         </nav>
       </div>
