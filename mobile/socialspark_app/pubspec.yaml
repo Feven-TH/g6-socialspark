@@ -33,8 +33,15 @@ dependencies:
   # Form validation
   form_field_validator: ^1.1.0
 
-  # Logging (optional but useful)
+  # Logging
   logger: ^2.4.0
+
+  # ==== Scheduling & Sharing (added) ====
+  path_provider: ^2.1.2
+  share_plus: ^9.0.0
+  flutter_local_notifications: ^17.1.2
+  workmanager: ^0.5.2
+  timezone: ^0.9.3
 
 dev_dependencies:
   flutter_test:
