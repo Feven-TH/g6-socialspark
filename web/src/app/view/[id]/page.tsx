@@ -11,35 +11,144 @@ import {
 } from "../../../components/card";
 import { Textarea } from "../../../components/textarea";
 import { Badge } from "../../../components/badge";
-import { ImageIcon, Camera, Hash, Type, Play, ArrowLeft } from "lucide-react";
-
-type ContentItem = {
-  id: number;
-  title: string;
-  caption: string;
-  hashtags: string[];
-  imageUrl: string;
-  videoUrl?: string;
-  platform: string;
-  type: string;
-};
+import { Button } from "../../../components/button";
+import Toast from "@/components/Toast";
+import {
+  ImageIcon,
+  Camera,
+  Hash,
+  Type,
+  Play,
+  ArrowLeft,
+  Download,
+  Copy,
+  Check,
+  Clock,
+  Edit,
+} from "lucide-react";
+import { ContentItem, ToastState } from "@/types/library";
+import libraryService from "@/services/libraryService";
 
 export default function Page() {
   const params = useParams();
   const id = params?.id;
   const router = useRouter();
   const [content, setContent] = useState<ContentItem | null>(null);
+  const [copiedId, setCopiedId] = useState<number | null>(null);
+  const [toast, setToast] = useState<ToastState>({
+    show: false,
+    message: "",
+    type: "success",
+  });
 
   useEffect(() => {
     if (!id) return;
 
-    const stored = localStorage.getItem("libraryContent");
-    if (stored) {
-      const items: ContentItem[] = JSON.parse(stored);
-      const selected = items.find((item) => item.id.toString() === id);
-      if (selected) setContent(selected);
-    }
+    const loadContent = async () => {
+      try {
+        const item = await libraryService.getLibraryItem(Number(id));
+        if (item) {
+          setContent({
+            id: item.id,
+            title: item.title,
+            caption: item.caption,
+            hashtags: item.hashtags,
+            imageUrl: item.imageUrl,
+            videoUrl: item.videoUrl,
+            platform: item.platform,
+            type: item.type,
+          });
+        }
+      } catch (error) {
+        console.error("Failed to load content:", error);
+        showToast("Failed to load content", "error");
+      }
+    };
+
+    loadContent();
   }, [id]);
+
+  const showToast = (message: string, type: "success" | "error") => {
+    setToast({ show: true, message, type });
+    setTimeout(
+      () => setToast({ show: false, message: "", type: "success" }),
+      3000
+    );
+  };
+
+  const handleExportAsImage = async () => {
+    if (!content) return;
+
+    try {
+      const blob = await libraryService.exportImage({
+        ...content,
+        videoUrl: content.videoUrl || "",
+        createdAt: new Date().toISOString(),
+        status: "draft",
+        engagement: { likes: 0, comments: 0, views: 0 },
+        contentType: content.type,
+      });
+
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `${content.title.replace(/\s+/g, "_")}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      showToast(`"${content.title}" exported as image successfully`, "success");
+    } catch (error) {
+      showToast("Failed to export as image", "error");
+    }
+  };
+
+  const handleCopyToClipboard = async () => {
+    if (!content) return;
+
+    const textToCopy = `${content.caption}\n\n${content.hashtags
+      .map((tag) => `#${tag}`)
+      .join(" ")}`;
+
+    try {
+      await libraryService.copyToClipboard(textToCopy);
+      setCopiedId(content.id);
+      setTimeout(() => setCopiedId(null), 2000);
+      showToast("Caption and hashtags copied to clipboard", "success");
+    } catch (error) {
+      showToast("Failed to copy to clipboard", "error");
+    }
+  };
+
+  const handleEdit = () => {
+    if (!content) return;
+
+    libraryService.saveEditorContent({
+      id: content.id,
+      caption: content.caption,
+      hashtags: content.hashtags,
+      imageUrl: content.imageUrl,
+      platform: content.platform,
+      contentType: content.type,
+      title: content.title,
+    });
+    window.location.href = `/editor/${content.id}`;
+  };
+
+  const handleSchedule = () => {
+    if (!content) return;
+
+    libraryService.saveSchedulerContent({
+      id: content.id,
+      caption: content.caption,
+      hashtags: content.hashtags,
+      imageUrl: content.imageUrl,
+      platform: content.platform,
+      contentType: content.type,
+      title: content.title,
+    });
+    window.location.href = `/schedule/${content.id}`;
+  };
 
   if (!content) {
     return (
@@ -60,7 +169,56 @@ export default function Page() {
         Back to Library
       </button>
 
-      <h1 className="text-2xl font-bold mb-6">{content.title}</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold">{content.title}</h1>
+
+        {/* Action Buttons */}
+        <div className="flex gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={handleEdit}
+            title="Edit snap"
+          >
+            <Edit className="w-4 h-4 mr-2" />
+            Edit
+          </Button>
+
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={handleExportAsImage}
+            title="Export as image"
+          >
+            <Download className="w-4 h-4 mr-2" />
+            Export
+          </Button>
+
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={handleCopyToClipboard}
+            title="Copy caption and hashtags"
+          >
+            {copiedId === content.id ? (
+              <Check className="w-4 h-4 mr-2 text-green-600" />
+            ) : (
+              <Copy className="w-4 h-4 mr-2" />
+            )}
+            Copy All
+          </Button>
+
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={handleSchedule}
+            title="Schedule snap"
+          >
+            <Clock className="w-4 h-4 mr-2" />
+            Schedule
+          </Button>
+        </div>
+      </div>
 
       <Card>
         <CardHeader>
@@ -136,6 +294,9 @@ export default function Page() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Toast Notifications */}
+      <Toast toast={toast} />
     </div>
   );
 }
