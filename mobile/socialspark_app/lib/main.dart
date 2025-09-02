@@ -26,6 +26,8 @@ class AppRoot extends StatelessWidget {
             title: 'SocialSpark',
             theme: ThemeData(useMaterial3: true),
             routerConfig: router,
+            debugShowCheckedModeBanner: false,
+
           );
         },
       ),

@@ -14,7 +14,7 @@ class _DashboardPageState extends State<DashboardPage> {
   late final pages = [
     _buildHomeContent(), // 👈 replaced with full landing page
     const Center(child: Text("Library")),
-    const Center(child: Text("Scheduler")),
+    const Center(child: Text("Brand")),
     const Center(child: Text("Settings")),
   ];
 
@@ -47,7 +47,7 @@ class _DashboardPageState extends State<DashboardPage> {
               _navItem(Icons.home, "Home", 0),
               _navItem(Icons.star_border, "Library", 1),
               const SizedBox(width: 40),
-              _navItem(Icons.calendar_today, "Scheduler", 2),
+              _navItem(Icons.palette_outlined, "Brand", 2),
               _navItem(Icons.settings, "Setting", 3),
             ],
           ),
@@ -125,7 +125,7 @@ class _DashboardPageState extends State<DashboardPage> {
           children: [
             Expanded(
               child: OutlinedButton(
-                onPressed: () {},
+                onPressed: () => context.go('/home/about'),
                 style: OutlinedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 14),
                 ),
