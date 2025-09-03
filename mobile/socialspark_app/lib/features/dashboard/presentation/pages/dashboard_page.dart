@@ -66,9 +66,22 @@ class _DashboardPageState extends State<DashboardPage> {
     final selected = _index == idx;
     return InkWell(
       onTap: () {
+        print('Tapped button: $label (index: $idx)');
         if (idx == 1) {
           // Navigate to Library page when Library tab is tapped
+          print('Navigating to /library');
           context.go('/library');
+        } else if (idx == 3) {
+          // Navigate to Settings page when Settings tab is tapped
+          print('Navigating to /settings');
+          try {
+            context.go('/settings');
+          } catch (e) {
+            print('Error navigating to settings: $e');
+          }
+        } else if (idx == 0) {
+          // For home, just update the index
+          setState(() => _index = 0);
         } else {
           setState(() => _index = idx);
         }

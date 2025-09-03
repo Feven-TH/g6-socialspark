@@ -14,6 +14,7 @@ import '../../features/brand/presentation/pages/brand_setup_page.dart';   // you
 import '../../features/dashboard/presentation/pages/dashboard_page.dart'; // bottom nav "home"
 import '../../features/authentication/presentation/pages/signup_page.dart';
 import '../../features/about/presentation/pages/about_us_page.dart';
+import '../../features/settings/presentation/pages/settings_page.dart';
 
 GoRouter buildRouter(SessionStore session) {
   return GoRouter(
@@ -59,15 +60,32 @@ GoRouter buildRouter(SessionStore session) {
         name: 'library',
         builder: (_, __) => const LibraryPage(),
       ),
+      // Settings route at the root level
+      GoRoute(
+        path: '/settings',
+        name: 'settings',
+        builder: (_, __) => const SettingsPage(),
+      ),
     ],
 
     // Stage-based redirect, but ALWAYS allow staying on /splash
     redirect: (ctx, state) {
-      // 1) Always allow the splash screen to be visible until user taps "Get Started"
-      if (state.matchedLocation == '/splash') return null;
-      if (state.matchedLocation == '/login') return null;
-      if (state.matchedLocation == '/signup') return null;
-      if (state.matchedLocation == '/home/about') return null;
+      // 1) Always allow the splash screen and other public routes to be visible
+      if (state.matchedLocation == '/splash' ||
+          state.matchedLocation == '/login' ||
+          state.matchedLocation == '/signup') {
+        return null;
+      }
+      
+      // 2) For authenticated users, allow these routes
+      if (session.stage == AppStage.home) {
+        if (state.matchedLocation == '/home' ||
+            state.matchedLocation == '/home/about' ||
+            state.matchedLocation == '/library' ||
+            state.matchedLocation == '/settings') {
+          return null;
+        }
+      }
 
       // 2) Then gate everything else by the app stage
       switch (session.stage) {
@@ -79,12 +97,14 @@ GoRouter buildRouter(SessionStore session) {
         case AppStage.brandSetup:
           return state.matchedLocation == '/brand' ? null : '/brand';
         case AppStage.home:
-          // Allow /home, /home/about, and /library
+          // Default to home if route is not recognized
           if (state.matchedLocation == '/home' ||
               state.matchedLocation == '/home/about' ||
-              state.matchedLocation == '/library') {
+              state.matchedLocation == '/library' ||
+              state.matchedLocation == '/settings') {
             return null;
           }
+          // If trying to access an unknown route while authenticated, go to home
           return '/home';
       }
     },
