@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/button";
 import {
   Card,
@@ -27,7 +27,6 @@ import {
   Hash,
   Target,
   Save,
-  Upload,
   Coffee,
   ShoppingBag,
   Scissors,
@@ -63,7 +62,6 @@ export default function BrandSetupPage() {
     targetAudience: "coffee-lovers",
   });
 
-  
   useEffect(() => {
     const storedBrand = localStorage.getItem("brandSetting");
     const storedPreset = localStorage.getItem("brandPreset");
@@ -75,7 +73,6 @@ export default function BrandSetupPage() {
     }
   }, []);
 
-  
   const [newHashtag, setNewHashtag] = useState("");
 
   const businessTypes = [
@@ -333,7 +330,7 @@ export default function BrandSetupPage() {
           </Card>
 
           {/* Logo Upload */}
-          <Card>
+          {/* <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Upload className="w-5 h-5" />
@@ -350,7 +347,7 @@ export default function BrandSetupPage() {
                 <Button variant="outline">Choose File</Button>
               </div>
             </CardContent>
-          </Card>
+          </Card> */}
 
           {/* Default Hashtags */}
           <Card>

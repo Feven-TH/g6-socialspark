@@ -1,7 +1,6 @@
 "use client";
 import Image from "next/image";
-
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/button";
 import {
   Card,
@@ -40,14 +39,22 @@ import {
   RotateCcw,
   AlertCircle,
 } from "lucide-react";
+import { v4 as uuidv4 } from "uuid";
+
 import {
-  generateCaption,
-  generateImage,
-  generateStoryboard,
-  renderVideo,
-  pollTaskStatus,
-} from "@/lib/api";
+  useGenerateCaptionMutation,
+  useGenerateImageMutation,
+  useRenderVideoMutation,
+  useGenerateStoryboardMutation,
+  useGetTaskQuery,
+} from "@/lib/redux/services/api";
 import { Alert, AlertDescription } from "@/components/alert";
+import type { Brand } from "../types/common";
+
+interface GetTaskResponse {
+  status: "queued" | "ready" | "failed";
+  video_url?: string;
+}
 
 export default function Dashboard() {
   const [language, setLanguage] = useState("en");
@@ -58,23 +65,97 @@ export default function Dashboard() {
   const [tone, setTone] = useState("playful");
   const [businessType, setBusinessType] = useState("cafe");
   const [isGenerating, setIsGenerating] = useState(false);
+  const [brand, setBrand] = useState<Brand | null>(null);
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
+
   type GeneratedContent = {
     caption: string;
     hashtags: string[];
-    imageUrl: string;
-    videoUrl: string;
+    imageUrl?: string;
+    videoUrl?: string;
     taskId: string;
   };
+
+  const [
+    generateCaption,
+    { isLoading: isCaptionLoading, error: captionError },
+  ] = useGenerateCaptionMutation();
+  const [generateImage, { isLoading: isImageLoading, error: imageError }] =
+    useGenerateImageMutation();
+  const [
+    generateStoryboard,
+    { isLoading: isStoryboardLoading, error: storyboardError },
+  ] = useGenerateStoryboardMutation();
+  const [renderVideo, { isLoading: isVideoLoading, error: videoError }] =
+    useRenderVideoMutation();
+
+  const isLoading =
+    isCaptionLoading || isImageLoading || isStoryboardLoading || isVideoLoading;
 
   const [generatedContent, setGeneratedContent] = useState<GeneratedContent>({
     caption: "",
     hashtags: [],
     imageUrl: "",
     videoUrl: "",
-    taskId: "", // For video rendering
+    taskId: "",
   });
+
+  useEffect(() => {
+    const storedBrand = localStorage.getItem("brandSetting");
+    if (!storedBrand) return;
+    try {
+      const parsed = JSON.parse(storedBrand) as Brand;
+      setBrand(parsed);
+    } catch (e) {
+      console.error("Failed to parse brand data:", e);
+    }
+  }, []);
+
+  // Use RTK Query for task status polling (REMOVED manual polling)
+  const { data: taskStatus, error: taskError } = useGetTaskQuery(
+    generatedContent.taskId,
+    {
+      skip: !generatedContent.taskId,
+      pollingInterval: 2000,
+    }
+  );
+
+  // Handle task status updates
+  useEffect(() => {
+    if (taskStatus) {
+      console.log("Task status:", taskStatus);
+
+      if (taskStatus.status === "ready" && taskStatus.video_url) {
+        // Video is ready!
+        setGeneratedContent((prev) => ({
+          ...prev,
+          videoUrl: taskStatus.video_url,
+        }));
+        setProgress(100);
+        setCurrentStep("preview");
+      } else if (taskStatus.status === "failed") {
+        setError("Video rendering failed. Please try again.");
+        setIsGenerating(false);
+      }
+    }
+  }, [taskStatus]);
+
+  useEffect(() => {
+    if (taskError) {
+      console.error("Task polling error:", taskError);
+      setError("Failed to check video status");
+      setIsGenerating(false);
+    }
+  }, [taskError]);
+
+  useEffect(() => {
+    const error = captionError || imageError || storyboardError || videoError;
+    if (error) {
+      setError("Failed to generate content. Please try again.");
+      setIsGenerating(false);
+    }
+  }, [captionError, imageError, storyboardError, videoError]);
 
   const translations = {
     en: {
@@ -128,72 +209,142 @@ export default function Dashboard() {
     setProgress(0);
     setCurrentStep("generating");
     setError(null);
+    setGeneratedContent({
+      caption: "",
+      hashtags: [],
+      imageUrl: "",
+      videoUrl: "",
+      taskId: "",
+    });
 
     try {
-      // Step 1: Generate caption and hashtags
-      setProgress(20);
-      const captionResponse = await generateCaption(
-        idea,
-        businessType,
-        language
-      );
+      if (!brand) {
+        setError("Please set up your brand first!");
+        setIsGenerating(false);
+        return;
+      }
 
-      setProgress(40);
+      setProgress(20);
+      const captionResponse = await generateCaption({
+        idea,
+        platform,
+        language,
+        hashtags_count: 6,
+        brand_presets: {
+          name: brand.businessName || "",
+          tone: tone,
+          colors: [
+            brand.primaryColor || "#000000",
+            brand.secondaryColor || "#FFFFFF",
+          ],
+          default_hashtags: brand.defaultHashtags || [],
+          footer_text: `© ${brand.businessName} ${new Date().getFullYear()}`,
+        },
+      }).unwrap();
+
       setGeneratedContent((prev) => ({
         ...prev,
         caption: captionResponse.caption,
         hashtags: captionResponse.hashtags,
       }));
 
-      // Step 2: Generate image
-      setProgress(60);
-      const imageResponse = await generateImage(idea, tone);
+      setProgress(40);
 
-      setProgress(80);
-      setGeneratedContent((prev) => ({
-        ...prev,
-        imageUrl: imageResponse.image_url,
-      }));
+      if (contentType === "image") {
+        setProgress(60);
+        const imageResponse = await generateImage({
+          idea,
+          aspect_ratio: platform === "instagram" ? "1:1" : "9:16",
+          brand_presets: {
+            name: brand.businessName || "",
+            tone: tone,
+            colors: [
+              brand.primaryColor || "#000000",
+              brand.secondaryColor || "#FFFFFF",
+            ],
+            default_hashtags: brand.defaultHashtags || [],
+            footer_text: `© ${brand.businessName} ${new Date().getFullYear()}`,
+          },
+        }).unwrap();
 
-      // Step 3: Generate video if needed
+        setGeneratedContent((prev) => ({
+          ...prev,
+          imageUrl: imageResponse.image_url,
+        }));
+        setProgress(100);
+        setCurrentStep("preview");
+      }
+
       if (contentType === "video") {
-        setProgress(85);
-        const storyboardResponse = await generateStoryboard(idea, 15);
+        setProgress(50);
+        const storyboardResponse = await generateStoryboard({
+          idea,
+          platform,
+          language,
+          number_of_shots: 3,
+          cta: "Visit us today!",
+          brand_presets: {
+            name: brand.businessName || "",
+            tone: tone,
+            colors: [
+              brand.primaryColor || "#000000",
+              brand.secondaryColor || "#FFFFFF",
+            ],
+            default_hashtags: brand.defaultHashtags || [],
+            footer_text: `© ${brand.businessName} ${new Date().getFullYear()}`,
+          },
+        }).unwrap();
 
-        setProgress(90);
-        const videoResponse = await renderVideo(storyboardResponse.shots);
+        if (
+          !storyboardResponse?.shots ||
+          storyboardResponse.shots.length === 0
+        ) {
+          throw new Error(
+            "Failed to generate storyboard: No shots were created"
+          );
+        }
+
+        setProgress(70);
+
+        const videoResponse = await renderVideo({
+          shots: storyboardResponse.shots,
+          music: storyboardResponse.music || "upbeat",
+        }).unwrap();
+
+        if (!videoResponse?.task_id) {
+          throw new Error("Failed to queue video rendering task");
+        }
 
         setGeneratedContent((prev) => ({
           ...prev,
           taskId: videoResponse.task_id,
         }));
 
-        // Poll for video completion
-        setProgress(95);
-        const completedTask = await pollTaskStatus(
-          videoResponse.task_id,
-          (status) => {
-            console.log("[v0] Video rendering status:", status.status);
-          }
-        );
-
-        if (completedTask.video_url) {
-          setGeneratedContent((prev) => ({
-            ...prev,
-            videoUrl: completedTask.video_url ?? "",
-          }));
-        }
+        setProgress(80);
+        setCurrentStep("preview");
       }
-
-      setProgress(100);
-      setCurrentStep("preview");
     } catch (err) {
-      console.error("[v0] Generation error:", err);
+      console.error("Generation failed:", err);
       setError(
         err instanceof Error ? err.message : "Failed to generate content"
       );
     } finally {
       setIsGenerating(false);
+    }
+  };
+
+  const getVideoStatusMessage = () => {
+    if (!generatedContent.taskId) return "Video Preview";
+
+    switch (taskStatus?.status) {
+      case "queued":
+        return "Video in queue...";
+      case "ready":
+        return "Video ready!";
+      case "failed":
+        return "Video failed - try again";
+      default:
+        return "Processing video...";
     }
   };
 
@@ -211,13 +362,6 @@ export default function Dashboard() {
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Main Content Creation Panel */}
           <div className="lg:col-span-2 space-y-6">
-            {error && (
-              <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
-
             {/* Idea Input Card */}
             <Card className="border-2 border-primary/20  bg-[#D9D9D9]/[0.72]">
               <CardHeader>
@@ -236,7 +380,6 @@ export default function Dashboard() {
                   dir={language === "am" ? "ltr" : "ltr"}
                 />
 
-                {/* Quick Examples */}
                 <div className="flex flex-wrap gap-2">
                   <Button
                     variant="outline"
@@ -256,7 +399,6 @@ export default function Dashboard() {
                   </Button>
                 </div>
 
-                {/* Business Type and Platform Selection */}
                 <div className="grid grid-cols-3 gap-4">
                   <div>
                     <label className="text-sm font-medium mb-2 block">
@@ -391,7 +533,14 @@ export default function Dashboard() {
               </CardContent>
             </Card>
 
-            {/* Generated Content Preview */}
+            {error && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{error.toString()}</AlertDescription>
+              </Alert>
+            )}
+
+         
             {currentStep === "preview" && generatedContent.caption && (
               <Card>
                 <CardHeader>
@@ -493,17 +642,20 @@ export default function Dashboard() {
                     <Button
                       variant="outline"
                       onClick={() => {
-                        // Save content to localStorage for scheduler
                         localStorage.setItem(
                           "schedulerContent",
                           JSON.stringify({
+                            id: uuidv4(),
                             caption: generatedContent.caption,
                             hashtags: generatedContent.hashtags,
                             imageUrl: generatedContent.imageUrl,
                             videoUrl: generatedContent.videoUrl,
                             platform,
                             contentType,
-                            tone,
+                            title: generatedContent.caption
+                              .split(" ")
+                              .slice(0, 6)
+                              .join(" "),
                           })
                         );
                         window.location.href = "/scheduler";
@@ -520,15 +672,18 @@ export default function Dashboard() {
                           localStorage.getItem("libraryContent") || "[]"
                         );
 
-                        // Add new content
                         existingLibrary.push({
+                          id: uuidv4(),
                           caption: generatedContent.caption,
                           hashtags: generatedContent.hashtags,
                           imageUrl: generatedContent.imageUrl,
                           videoUrl: generatedContent.videoUrl,
                           platform,
                           contentType,
-                          tone,
+                          title: generatedContent.caption
+                            .split(" ")
+                            .slice(0, 6)
+                            .join(" "),
                           createdAt: new Date().toISOString(),
                         });
 
@@ -590,9 +745,18 @@ export default function Dashboard() {
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Brand Colors</label>
                   <div className="flex gap-2">
-                    <div className="w-8 h-8 bg-primary rounded-full border-2 border-background shadow-sm"></div>
-                    <div className="w-8 h-8 bg-secondary rounded-full border-2 border-background shadow-sm"></div>
-                    <div className="w-8 h-8 bg-accent rounded-full border-2 border-background shadow-sm"></div>
+                    <div
+                      className="w-8 h-8 bg-primary rounded-full border-2 border-background shadow-sm"
+                      style={{ backgroundColor: brand?.primaryColor }}
+                    ></div>
+                    <div
+                      className="w-8 h-8 bg-secondary rounded-full border-2 border-background shadow-sm"
+                      style={{ backgroundColor: brand?.secondaryColor }}
+                    ></div>
+                    <div
+                      className="w-8 h-8 bg-accent rounded-full border-2 border-background shadow-sm"
+                      style={{ backgroundColor: brand?.accentColor }}
+                    ></div>
                   </div>
                 </div>
 
@@ -601,15 +765,11 @@ export default function Dashboard() {
                     Default Hashtags
                   </label>
                   <div className="flex flex-wrap gap-1">
-                    <Badge variant="outline" className="text-xs">
-                      #EthiopianBusiness
-                    </Badge>
-                    <Badge variant="outline" className="text-xs">
-                      #AddisAbaba
-                    </Badge>
-                    <Badge variant="outline" className="text-xs">
-                      #LocalBrand
-                    </Badge>
+                    {brand?.defaultHashtags.map((hashtag, i) => (
+                      <Badge key={i} variant="outline" className="text-xs">
+                        #{hashtag}
+                      </Badge>
+                    ))}
                   </div>
                 </div>
               </CardContent>

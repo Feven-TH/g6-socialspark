@@ -142,23 +142,11 @@ export async function schedulePost(
 }
 
 // ----- Polling Utility -----
-export async function pollTaskStatus(
-  taskId: string,
-  onProgress?: (status: TaskStatus) => void
-): Promise<TaskStatus> {
-  return new Promise((resolve, reject) => {
-    const poll = async () => {
-      try {
-        const status = await getTaskStatus(taskId);
-        if (onProgress) onProgress(status);
+export const pollTaskStatus = async (taskId: string) => {
+  const response = await fetch(`/api/tasks/${taskId}`);
+  if (!response.ok) {
+    throw new Error("Failed to fetch task status");
+  }
+  return response.json();
+};
 
-        if (status.status === "completed") resolve(status);
-        else if (status.status === "failed") reject(new Error(status.error || "Task failed"));
-        else setTimeout(poll, 2000);
-      } catch (error) {
-        reject(error);
-      }
-    };
-    poll();
-  });
-}
