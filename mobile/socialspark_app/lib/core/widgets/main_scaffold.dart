@@ -18,7 +18,7 @@ class MainScaffold extends StatefulWidget {
 }
 
 class _MainScaffoldState extends State<MainScaffold> {
-  int _currentIndex = 0;
+  late int _currentIndex;
 
   @override
   void initState() {
@@ -28,7 +28,9 @@ class _MainScaffoldState extends State<MainScaffold> {
 
   void _onItemTapped(int index) {
     if (index == _currentIndex) return;
-    
+
+    // This setState is to optimistically update the UI.
+    // The actual page change is handled by GoRouter.
     setState(() {
       _currentIndex = index;
     });
@@ -41,13 +43,16 @@ class _MainScaffoldState extends State<MainScaffold> {
         context.go('/library');
         break;
       case 2:
-        // This is for the center FAB
+        // This is the FAB, which has its own onPressed.
         break;
       case 3:
-        // Add brand page if needed
+        context.go('/scheduler');
         break;
       case 4:
-        // Add settings page if needed
+        // TODO: Implement Settings page
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Settings page coming soon!")),
+        );
         break;
     }
   }
@@ -56,58 +61,69 @@ class _MainScaffoldState extends State<MainScaffold> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: widget.child,
-      bottomNavigationBar: widget.showBottomNav ? BottomAppBar(
-        shape: const CircularNotchedRectangle(),
-        notchMargin: 8,
-        child: SizedBox(
-          height: 64,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _buildNavItem(Icons.home, "Home", 0),
-              _buildNavItem(Icons.star_border, "Library", 1),
-              const SizedBox(width: 40), // Space for FAB
-              _buildNavItem(Icons.palette_outlined, "Brand", 3),
-              _buildNavItem(Icons.settings, "Settings", 4),
-            ],
-          ),
-        ),
-      ) : null,
-      floatingActionButton: widget.showBottomNav ? FloatingActionButton(
-        onPressed: () {
-          // Handle FAB press
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Create new post')),
-          );
-        },
-        backgroundColor: const Color(0xFF0F2137),
-        child: const Icon(Icons.add, color: Colors.white),
-      ) : null,
-      floatingActionButtonLocation: widget.showBottomNav 
-          ? FloatingActionButtonLocation.centerDocked 
+      bottomNavigationBar: widget.showBottomNav
+          ? BottomAppBar(
+              shape: const CircularNotchedRectangle(),
+              notchMargin: 8,
+              child: SizedBox(
+                height: 64,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    _buildNavItem(Icons.home_filled, "Home", 0),
+                    _buildNavItem(Icons.collections_bookmark, "Library", 1),
+                    const SizedBox(width: 40), // Space for FAB
+                    _buildNavItem(Icons.calendar_today, "Scheduler", 3),
+                    _buildNavItem(Icons.settings, "Settings", 4),
+                  ],
+                ),
+              ),
+            )
+          : null,
+      floatingActionButton: widget.showBottomNav
+          ? FloatingActionButton(
+              onPressed: () {
+                // TODO: Implement Create Post flow
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Create new post coming soon!")),
+                );
+              },
+              backgroundColor: const Color(0xFF0F2137),
+              child: const Icon(Icons.add, color: Colors.white),
+            )
+          : null,
+      floatingActionButtonLocation: widget.showBottomNav
+          ? FloatingActionButtonLocation.centerDocked
           : null,
     );
   }
 
   Widget _buildNavItem(IconData icon, String label, int index) {
     final isSelected = _currentIndex == index;
-    return InkWell(
-      onTap: () => _onItemTapped(index),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            color: isSelected ? const Color(0xFF0F2137) : Colors.black54,
-          ),
-          Text(
-            label,
-            style: TextStyle(
+    return Expanded(
+      child: InkWell(
+        onTap: () => _onItemTapped(index),
+        borderRadius: BorderRadius.circular(100),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 8),
+            Icon(
+              icon,
               color: isSelected ? const Color(0xFF0F2137) : Colors.black54,
-              fontSize: 12,
+              size: 24,
             ),
-          ),
-        ],
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: TextStyle(
+                color: isSelected ? const Color(0xFF0F2137) : Colors.black54,
+                fontSize: 12,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

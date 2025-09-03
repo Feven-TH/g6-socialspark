@@ -1,17 +1,16 @@
-// lib/config/router/app_router.dart
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-// import 'package:socialspark_app/features/authentication/presentation/pages/signup_page.dart';
 import 'package:socialspark_app/features/brand/presentation/controller/brand_setup_controller.dart';
 import 'package:socialspark_app/features/library/presentation/pages/library_page.dart';
+import 'package:socialspark_app/features/scheduling/presentation/pages/scheduler_page.dart';
 import '../../core/services/session_store.dart';
 
 // PAGES
-import '../../features/splash/presentation/pages/splash_page.dart';       // your splash UI with "Get Started"
+import '../../features/splash/presentation/pages/splash_page.dart';
 import '../../features/authentication/presentation/pages/login_page.dart';
-import '../../features/brand/presentation/pages/brand_setup_page.dart';   // your single long scroll page
-import '../../features/dashboard/presentation/pages/dashboard_page.dart'; // bottom nav "home"
+import '../../features/brand/presentation/pages/brand_setup_page.dart';
+import '../../features/dashboard/presentation/pages/dashboard_page.dart';
 import '../../features/authentication/presentation/pages/signup_page.dart';
 import '../../features/about/presentation/pages/about_us_page.dart';
 
@@ -59,33 +58,40 @@ GoRouter buildRouter(SessionStore session) {
         name: 'library',
         builder: (_, __) => const LibraryPage(),
       ),
+      GoRoute(
+        path: '/scheduler',
+        name: 'scheduler',
+        builder: (context, state) {
+          final Map<String, dynamic> extra = state.extra as Map<String, dynamic>;
+          final Map<String, dynamic> item = extra['item'] as Map<String, dynamic>;
+          final int index = extra['index'] as int;
+
+          return SchedulerPage(
+            contentPath: item['image'] as String?,
+            caption: item['description'] as String?,
+            platform: item['platform'] as String?,
+            itemIndex: index,
+          );
+        },
+      ),
     ],
 
-    // Stage-based redirect, but ALWAYS allow staying on /splash
+    // Stage-based redirect
     redirect: (ctx, state) {
-      // 1) Always allow the splash screen to be visible until user taps "Get Started"
       if (state.matchedLocation == '/splash') return null;
       if (state.matchedLocation == '/login') return null;
       if (state.matchedLocation == '/signup') return null;
       if (state.matchedLocation == '/home/about') return null;
 
-      // 2) Then gate everything else by the app stage
       switch (session.stage) {
         case AppStage.splash:
-          // if we somehow land elsewhere, send back to splash
           return '/splash';
         case AppStage.unauth:
           return state.matchedLocation == '/login' ? null : '/login';
         case AppStage.brandSetup:
           return state.matchedLocation == '/brand' ? null : '/brand';
         case AppStage.home:
-          // Allow /home, /home/about, and /library
-          if (state.matchedLocation == '/home' ||
-              state.matchedLocation == '/home/about' ||
-              state.matchedLocation == '/library') {
-            return null;
-          }
-          return '/home';
+          return null; // Allow all paths for logged-in users
       }
     },
   );
