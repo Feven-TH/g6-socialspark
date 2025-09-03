@@ -1,4 +1,5 @@
-import '../../repositories/settings_repository.dart';
+// Update the import path below to the correct location, for example:
+import 'package:socialspark_app/features/settings/domain/repositories/settings_repository.dart';
 
 class UpdateTheme {
   final SettingsRepository repository;
