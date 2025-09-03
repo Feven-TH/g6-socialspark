@@ -162,11 +162,21 @@ export default function ContentListItem({
                 size="sm"
                 variant="outline"
                 onClick={() => onSchedule(item)}
-                title="schedule"
+                title="set reminder"
                 className="flex-1 flex justify-center p-2"
               >
                 <Clock className="w-4 h-4" />
               </Button>
+              <Link href={`/post/${item.id}`}>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="flex-1 flex justify-center p-2"
+                  title="Post / Schedule"
+                >
+                  <Share className="w-4 h-4" />
+                </Button>
+              </Link>
             </div>
 
             {/* Utility buttons */}
