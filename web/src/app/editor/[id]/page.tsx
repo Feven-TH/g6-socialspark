@@ -79,7 +79,7 @@ function getContrastColor(hex: string) {
 }
 
 export default function EditorPage() {
-  const router = useRouter();
+
   const { id } = useParams();
 
   const [caption, setCaption] = useState("");

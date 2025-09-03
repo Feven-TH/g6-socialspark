@@ -362,13 +362,6 @@ export default function Dashboard() {
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Main Content Creation Panel */}
           <div className="lg:col-span-2 space-y-6">
-            {error && (
-              <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>{error.toString()}</AlertDescription>
-              </Alert>
-            )}
-
             {/* Idea Input Card */}
             <Card className="border-2 border-primary/20  bg-[#D9D9D9]/[0.72]">
               <CardHeader>
@@ -540,7 +533,14 @@ export default function Dashboard() {
               </CardContent>
             </Card>
 
-            {/* Generated Content Preview */}
+            {error && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{error.toString()}</AlertDescription>
+              </Alert>
+            )}
+
+         
             {currentStep === "preview" && generatedContent.caption && (
               <Card>
                 <CardHeader>
