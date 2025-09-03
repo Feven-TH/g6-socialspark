@@ -199,3 +199,14 @@ def render_video(self, payload):
         clips.append(video_url)
         durations.append(shot["duration"])
     return serve_video(clips, durations, payload["music"])
+
+@celery_app.task(name="usecases.tasks.send_reminder")
+def send_reminder(asset_id: str, platform: str):
+    from repository import schedule_repository
+    from datetime import datetime
+
+    print(f"[REMINDER] {datetime.utcnow().isoformat()} UTC - Asset {asset_id} scheduled for {platform}")
+
+    schedule_repository.update_status(asset_id, "done")
+
+    return {"asset_id": asset_id, "platform": platform, "status": "done"}
