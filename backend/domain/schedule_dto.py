@@ -10,7 +10,7 @@ class scheduleRequest(BaseModel):
 
 class scheduledResponse(BaseModel):
     status : str
-    scheduled_at : Optional[datetime.datetime] = None
+    scheduled_at : Optional[datetime] = None
     postID : str
 
 
