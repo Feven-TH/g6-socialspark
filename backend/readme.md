@@ -95,6 +95,10 @@ In another **separate terminal window**, start the Celery background worker.
 ```sh
 celery -A infrastructure.celery_app worker --loglevel=info
 ```
-
+### Run Celery Beat (Scheduler)
+In another **separate terminal window**, start the Celery scheduler to trigger periodic tasks.
+```sh
+celery -A infrastructure.celery_app beat --loglevel=info
+```
 Now, you can naviagate to `localhost:8000/docs` to look at the swagger API documentation inorder to integrate it into your project. Make sure to create a bucket called `videos` in the webUI of MinIO found at `localhost:9001`
 
