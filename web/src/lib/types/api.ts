@@ -1,4 +1,3 @@
-
 export interface BrandPresets {
   name: string;
   tone?: string;
@@ -20,7 +19,6 @@ export interface GenerateCaptionResponse {
   hashtags: string[];
 }
 
-
 export interface GenerateImageRequest {
   idea: string;
   aspect_ratio?: string;
@@ -30,7 +28,6 @@ export interface GenerateImageRequest {
 export interface GenerateImageResponse {
   image_url: string;
 }
-
 
 export interface GenerateStoryboardRequest {
   idea: string;
@@ -58,14 +55,13 @@ export interface RenderVideoRequest {
 
 export interface RenderVideoResponse {
   task_id: string;
-  status: "queued" | "processing" | "ready" | "failed";
+  status: "queued" | "ready" | "failed";
 }
 
 export interface GetTaskResponse {
   status: "queued" | "processing" | "ready" | "failed";
   video_url?: string;
 }
-
 
 export interface ExportRequest {
   draft_id: string;
@@ -75,7 +71,6 @@ export interface ExportResponse {
   draft_id: string;
   asset_url: string;
 }
-
 
 export interface ScheduleRequest {
   asset_id: string;
