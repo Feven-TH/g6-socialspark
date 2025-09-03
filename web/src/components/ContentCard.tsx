@@ -13,6 +13,7 @@ import {
   Clock,
   Copy,
   Check,
+  Share,
 } from "lucide-react";
 import { LibraryItem } from "@/types/library";
 
@@ -86,25 +87,26 @@ export default function ContentCard({
           </div>
         </div>
       </div>
-      <CardContent className="p-4">
-        <h3 className="font-semibold mb-2 truncate">{item.title}</h3>
-        <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
+      <CardContent className="p-3 sm:p-4">
+        <h3 className="font-semibold mb-2 text-sm sm:text-base break-words line-clamp-2">
+          {item.title}
+        </h3>
+        <p className="text-xs sm:text-sm text-muted-foreground mb-3 line-clamp-3 break-words">
           {item.caption}
         </p>
 
+        {/* Hashtags - Mobile responsive with full visibility */}
         <div className="flex flex-wrap gap-1 mb-3">
-          {item.hashtags.slice(0, 2).map((hashtag, index) => (
-            <Badge key={index} variant="outline" className="text-xs">
+          {item.hashtags.map((hashtag, index) => (
+            <Badge
+              key={index}
+              variant="outline"
+              className="text-xs px-2 py-1 break-all"
+            >
               #{hashtag}
             </Badge>
           ))}
-          {item.hashtags.length > 2 && (
-            <Badge variant="outline" className="text-xs">
-              +{item.hashtags.length - 2}
-            </Badge>
-          )}
         </div>
-
         <div className="flex items-center justify-between">
           <span className="text-xs text-muted-foreground">
             {new Date(item.createdAt).toLocaleDateString()}
@@ -115,19 +117,21 @@ export default function ContentCard({
               variant="ghost"
               onClick={() => onExport(item)}
               title="Export as image"
+              className="p-1 sm:p-2"
             >
-              <Download className="w-4 h-4" />
+              <Download className="w-3 h-3 sm:w-4 sm:h-4" />
             </Button>
             <Button
               size="sm"
               variant="ghost"
               onClick={() => onCopy(item)}
               title="Copy caption and hashtags"
+              className="p-1 sm:p-2"
             >
               {copiedId === item.id ? (
-                <Check className="w-4 h-4 text-green-600" />
+                <Check className="w-3 h-3 sm:w-4 sm:h-4 text-green-600" />
               ) : (
-                <Copy className="w-4 h-4" />
+                <Copy className="w-3 h-3 sm:w-4 sm:h-4" />
               )}
             </Button>
             <Button
@@ -135,16 +139,18 @@ export default function ContentCard({
               variant="ghost"
               onClick={() => onSchedule(item)}
               title="Schedule snap"
+              className="p-1 sm:p-2"
             >
-              <Clock className="w-4 h-4" />
+              <Clock className="w-3 h-3 sm:w-4 sm:h-4" />
             </Button>
             <Button
               size="sm"
               variant="ghost"
               onClick={() => onDelete(item)}
               title="Delete snap"
+              className="p-1 sm:p-2"
             >
-              <Trash2 className="w-4 h-4" />
+              <Trash2 className="w-3 h-3 sm:w-4 sm:h-4" />
             </Button>
           </div>
         </div>
