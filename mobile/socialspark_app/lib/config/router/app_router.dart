@@ -79,7 +79,8 @@ GoRouter buildRouter(SessionStore session) {
       
       // 2) For authenticated users, allow these routes
       if (session.stage == AppStage.home) {
-        if (state.matchedLocation == '/home' ||
+        if (state.matchedLocation == '/' ||
+            state.matchedLocation == '/home' ||
             state.matchedLocation == '/home/about' ||
             state.matchedLocation == '/library' ||
             state.matchedLocation == '/settings') {

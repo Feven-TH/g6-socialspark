@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../widgets/profile_form.dart';
 
 class EditProfilePage extends StatelessWidget {
@@ -7,9 +8,18 @@ class EditProfilePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Edit Profile")),
-      body: const Padding(
-        padding: EdgeInsets.all(16),
+      appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => context.pop(),
+        ),
+        title: const Text("Edit Profile", style: TextStyle(color: Colors.white)),
+        backgroundColor: const Color(0xFF0F2137),
+        elevation: 0,
+      ),
+      backgroundColor: Colors.white,
+      body: const SingleChildScrollView(
+        padding: EdgeInsets.all(16.0),
         child: ProfileForm(),
       ),
     );

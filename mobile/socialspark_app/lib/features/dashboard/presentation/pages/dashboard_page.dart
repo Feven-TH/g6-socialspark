@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:socialspark_app/features/settings/presentation/pages/settings_page.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -65,25 +66,36 @@ class _DashboardPageState extends State<DashboardPage> {
   Widget _navItem(IconData icon, String label, int idx) {
     final selected = _index == idx;
     return InkWell(
-      onTap: () {
+      onTap: () async {
         print('Tapped button: $label (index: $idx)');
-        if (idx == 1) {
-          // Navigate to Library page when Library tab is tapped
-          print('Navigating to /library');
-          context.go('/library');
-        } else if (idx == 3) {
-          // Navigate to Settings page when Settings tab is tapped
-          print('Navigating to /settings');
-          try {
-            context.go('/settings');
-          } catch (e) {
-            print('Error navigating to settings: $e');
-          }
-        } else if (idx == 0) {
-          // For home, just update the index
-          setState(() => _index = 0);
-        } else {
-          setState(() => _index = idx);
+        
+        // Handle navigation for specific tabs
+        switch (idx) {
+          case 0: // Home
+            setState(() => _index = 0);
+            if (ModalRoute.of(context)?.settings.name != '/home') {
+              context.go('/home');
+            }
+            break;
+          case 1: // Library
+            setState(() => _index = 1);
+            print('Navigating to /library');
+            context.go('/library');
+            break;
+          case 2: // Brand
+            setState(() => _index = 2);
+            // Handle brand navigation if needed
+            break;
+          case 3: // Settings
+            print('Navigating to /settings');
+            try {
+              await context.push('/settings');
+              // Update the selected index when returning from settings
+              setState(() => _index = 0);
+            } catch (e) {
+              print('Error navigating to settings: $e');
+            }
+            break;
         }
       },
       child: Column(
