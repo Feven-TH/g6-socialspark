@@ -28,6 +28,8 @@ services:
       MINIO_ROOT_PASSWORD: ${MINIO_ACCESS_KEY}
     volumes:
       - minio_data:/data
+    extra_hosts:
+      - "minio:host-gateway"
 
   celery_worker:
     build: .
