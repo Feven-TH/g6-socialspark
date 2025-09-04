@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:socialspark_app/core/widgets/main_scaffold.dart';
+import 'package:socialspark_app/features/library/data/library_data_service.dart';
 
 class SchedulerPage extends StatefulWidget {
   const SchedulerPage({
@@ -7,6 +9,7 @@ class SchedulerPage extends StatefulWidget {
     String? contentPath,
     String? caption,
     String? platform,
+    required this.itemIndex,
   })  : _contentPath = contentPath ?? '',
         _caption = caption ?? '',
         _platform = platform ?? 'all',
@@ -15,6 +18,7 @@ class SchedulerPage extends StatefulWidget {
   final String _contentPath;
   final String _caption;
   final String _platform;
+  final int itemIndex;
 
   @override
   _SchedulerPageState createState() => _SchedulerPageState();
@@ -24,20 +28,29 @@ class _SchedulerPageState extends State<SchedulerPage> {
   DateTime _scheduledDate = DateTime.now();
   TimeOfDay _scheduledTime = TimeOfDay.now();
   bool _isLoading = false;
+  bool _isScheduling = false; // To differentiate between post now and schedule
 
   void _postNow() {
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+      _isScheduling = false;
+    });
     // Simulate network delay
     Future.delayed(const Duration(seconds: 2), () {
       setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Content shared successfully!')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Content shared successfully!')),
+        );
+      }
     });
   }
 
   Future<void> _schedulePost() async {
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+      _isScheduling = true;
+    });
     final scheduledTime = DateTime(
       _scheduledDate.year,
       _scheduledDate.month,
@@ -48,31 +61,35 @@ class _SchedulerPageState extends State<SchedulerPage> {
 
     // Simulate network delay
     await Future.delayed(const Duration(seconds: 2));
-    
+
+    LibraryDataService.updateStatus(widget.itemIndex, 'scheduled');
+
     if (mounted) {
       setState(() => _isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Post scheduled for ${scheduledTime.toString()}')),
       );
+      context.go('/library');
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return MainScaffold(
-      currentIndex: 1, // Keep the library tab highlighted
+      showBottomNav: false, // Hide the main bottom nav
       child: Column(
         children: [
           // Custom app bar
           Container(
             color: const Color(0xFF0F2137),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            padding:
+                const EdgeInsets.only(top: 40, bottom: 12, left: 16, right: 16),
             child: Row(
               children: [
                 IconButton(
-                  icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20, color: Colors.white),
-                  onPressed: () => Navigator.pop(context),
+                  icon: const Icon(Icons.arrow_back_ios_new_rounded,
+                      size: 20, color: Colors.white),
+                  onPressed: () => context.go('/library'),
                 ),
                 const SizedBox(width: 8),
                 const Text(
@@ -109,17 +126,21 @@ class _SchedulerPageState extends State<SchedulerPage> {
                     child: Column(
                       children: [
                         ClipRRect(
-                          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                          borderRadius: const BorderRadius.vertical(
+                              top: Radius.circular(16)),
                           child: widget._contentPath.isNotEmpty
-                              ? Image.network(
+                              ? Image.asset(
                                   widget._contentPath,
                                   width: double.infinity,
                                   height: 200,
                                   fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) => Container(
+                                  errorBuilder:
+                                      (context, error, stackTrace) =>
+                                          Container(
                                     height: 200,
                                     color: Colors.grey[100],
-                                    child: const Icon(Icons.image, size: 50, color: Colors.grey),
+                                    child: const Icon(Icons.image,
+                                        size: 50, color: Colors.grey),
                                   ),
                                 )
                               : Container(
@@ -129,9 +150,12 @@ class _SchedulerPageState extends State<SchedulerPage> {
                                     child: Column(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
-                                        Icon(Icons.image, size: 50, color: Colors.grey),
+                                        Icon(Icons.image,
+                                            size: 50, color: Colors.grey),
                                         SizedBox(height: 8),
-                                        Text('No media selected', style: TextStyle(color: Colors.grey)),
+                                        Text('No media selected',
+                                            style: TextStyle(
+                                                color: Colors.grey)),
                                       ],
                                     ),
                                   ),
@@ -144,7 +168,9 @@ class _SchedulerPageState extends State<SchedulerPage> {
                             children: [
                               const Text(
                                 'Post Details',
-                                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                                style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w600),
                               ),
                               const SizedBox(height: 16),
                               // Date and Time Picker Row
@@ -154,17 +180,20 @@ class _SchedulerPageState extends State<SchedulerPage> {
                                     child: _buildDateTimePicker(
                                       context,
                                       icon: Icons.calendar_today_outlined,
-                                      value: "${_scheduledDate.toLocal()}".split(' ')[0],
+                                      value: "${_scheduledDate.toLocal()}"
+                                          .split(' ')[0],
                                       label: 'Date',
                                       onTap: () async {
                                         final date = await showDatePicker(
                                           context: context,
                                           initialDate: _scheduledDate,
                                           firstDate: DateTime.now(),
-                                          lastDate: DateTime.now().add(const Duration(days: 365)),
+                                          lastDate: DateTime.now()
+                                              .add(const Duration(days: 365)),
                                         );
                                         if (date != null && mounted) {
-                                          setState(() => _scheduledDate = date);
+                                          setState(
+                                              () => _scheduledDate = date);
                                         }
                                       },
                                     ),
@@ -182,7 +211,8 @@ class _SchedulerPageState extends State<SchedulerPage> {
                                           initialTime: _scheduledTime,
                                         );
                                         if (time != null && mounted) {
-                                          setState(() => _scheduledTime = time);
+                                          setState(
+                                              () => _scheduledTime = time);
                                         }
                                       },
                                     ),
@@ -196,20 +226,19 @@ class _SchedulerPageState extends State<SchedulerPage> {
                     ),
                   ),
                   const SizedBox(height: 24),
-                  
+
                   // Action Buttons
                   Row(
                     children: [
                       Expanded(
                         child: _buildActionButton(
                           context,
-                          icon: Icons.download_rounded,
-                          label: 'Download',
+                          icon: Icons.save_alt_rounded,
+                          label: 'Save as Draft',
                           color: const Color(0xFF4CAF50),
                           onPressed: () {
-                            // Handle download
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Downloading...')),
+                              const SnackBar(content: Text('Saved as draft')),
                             );
                           },
                         ),
@@ -222,7 +251,7 @@ class _SchedulerPageState extends State<SchedulerPage> {
                           label: 'Post Now',
                           color: const Color(0xFF2196F3),
                           onPressed: _isLoading ? null : _postNow,
-                          isLoading: _isLoading,
+                          isLoading: _isLoading && !_isScheduling,
                         ),
                       ),
                     ],
@@ -233,11 +262,11 @@ class _SchedulerPageState extends State<SchedulerPage> {
                     child: _buildActionButton(
                       context,
                       icon: Icons.schedule_rounded,
-                      label: 'Schedule Post',
+                      label: 'Schedule The Post',
                       color: const Color(0xFF0F2137),
                       onPressed: _isLoading ? null : _schedulePost,
                       isFullWidth: true,
-                      isLoading: _isLoading,
+                      isLoading: _isLoading && _isScheduling,
                     ),
                   ),
                 ],
@@ -346,8 +375,6 @@ class _SchedulerPageState extends State<SchedulerPage> {
       ),
     );
 
-    return isFullWidth
-        ? SizedBox(width: double.infinity, child: button)
-        : button;
+    return isFullWidth ? SizedBox(width: double.infinity, child: button) : button;
   }
 }
