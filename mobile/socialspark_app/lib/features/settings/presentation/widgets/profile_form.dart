@@ -37,8 +37,7 @@ class _ProfileFormState extends State<ProfileForm> {
               onPrimary: Colors.white,
               surface: Color(0xFF1A2E4A),
               onSurface: Colors.white,
-            ),
-            dialogBackgroundColor: const Color(0xFF0F2137),
+            ), dialogTheme: DialogThemeData(backgroundColor: const Color(0xFF0F2137)),
           ),
           child: child!,
         );

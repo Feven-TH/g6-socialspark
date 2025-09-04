@@ -46,6 +46,7 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  equatable: ^2.0.5
   flutter_lints: ^5.0.0
 
 flutter:
@@ -53,7 +54,6 @@ flutter:
 
   assets:
     - assets/images/
-    # - assets/icons/
 
   fonts:
     - family: Poppins

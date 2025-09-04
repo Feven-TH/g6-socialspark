@@ -13,10 +13,11 @@ class _DashboardPageState extends State<DashboardPage> {
   int _index = 0;
 
   late final pages = [
-    _buildHomeContent(), // 👈 replaced with full landing page
-    _buildLibraryContent(),
-    const Center(child: Text("Brand")),
-    const Center(child: Text("Settings")),
+    _buildHomeContent(), // Home tab
+    _buildLibraryContent(), // Library tab
+    const Center(child: Text("Editor")), // Editor tab (placeholder, not used)
+    const Center(child: Text("Brand")), // Brand tab
+    const Center(child: Text("Settings")), // Settings tab
   ];
 
   Widget _buildLibraryContent() {
@@ -49,9 +50,10 @@ class _DashboardPageState extends State<DashboardPage> {
             children: [
               _navItem(Icons.home, "Home", 0),
               _navItem(Icons.star_border, "Library", 1),
-              const SizedBox(width: 40),
-              _navItem(Icons.palette_outlined, "Brand", 2),
-              _navItem(Icons.settings, "Setting", 3),
+              _navItem(Icons.edit, "Editor", 2),
+              const SizedBox(width: 40), // Space for FAB
+              _navItem(Icons.palette_outlined, "Brand", 3),
+              _navItem(Icons.settings, "Settings", 4),
             ],
           ),
         ),
@@ -60,55 +62,64 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Widget _navItem(IconData icon, String label, int idx) {
-    final selected = _index == idx;
-    return InkWell(
-      onTap: () async {
-        print('Tapped button: $label (index: $idx)');
-        
-        // Handle navigation for specific tabs
-        switch (idx) {
-          case 0: // Home
-            setState(() => _index = 0);
-            if (ModalRoute.of(context)?.settings.name != '/home') {
-              context.go('/home');
-            }
-            break;
-          case 1: // Library
-            setState(() => _index = 1);
-            print('Navigating to /library');
-            context.go('/library');
-            break;
-          case 2: // Brand
-            setState(() => _index = 2);
-            // Handle brand navigation if needed
-            break;
-          case 3: // Settings
-            print('Navigating to /settings');
-            try {
-              await context.push('/settings');
-              // Update the selected index when returning from settings
-              setState(() => _index = 0);
-            } catch (e) {
-              print('Error navigating to settings: $e');
-            }
-            break;
-        }
-      },
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon,
-              color: selected ? const Color(0xFF0F2137) : Colors.black54),
-          Text(label,
-              style: TextStyle(
-                  color: selected ? const Color(0xFF0F2137) : Colors.black54)),
-        ],
-      ),
-    );
-  }
+  final selected = _index == idx;
+  return InkWell(
+    onTap: () async {
+      print('Tapped button: $label (index: $idx)');
 
-  /// 👇 Full marketing/landing page goes here
+      switch (idx) {
+        case 0: // Home
+          setState(() => _index = 0);
+          if (ModalRoute.of(context)?.settings.name != '/home') {
+            context.go('/home');
+          }
+          break;
+
+        case 1: // Library
+          setState(() => _index = 1);
+          print('Navigating to /library');
+          context.go('/library');
+          break;
+
+        case 2: // Editor
+          setState(() => _index = 2);
+          print('Navigating to /editor');
+          context.go('/editor');
+          break;
+
+        case 3: // Brand
+          setState(() => _index = 3);
+          // You can add brand-specific navigation here
+          break;
+
+        case 4: // Settings
+          print('Navigating to /settings');
+          try {
+            await context.push('/settings');
+            setState(() => _index = 0); // reset after returning
+          } catch (e) {
+            print('Error navigating to settings: $e');
+          }
+          break;
+
+        default:
+          setState(() => _index = idx);
+      }
+    },
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(icon,
+            color: selected ? const Color(0xFF0F2137) : Colors.black54),
+        Text(label,
+            style: TextStyle(
+                color: selected ? const Color(0xFF0F2137) : Colors.black54)),
+      ],
+    ),
+  );
+}
+
   Widget _buildHomeContent() {
     return ListView(
       padding: const EdgeInsets.all(20),

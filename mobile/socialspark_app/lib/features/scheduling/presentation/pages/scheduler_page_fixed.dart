@@ -3,14 +3,13 @@ import 'package:socialspark_app/core/widgets/main_scaffold.dart';
 
 class SchedulerPage extends StatefulWidget {
   const SchedulerPage({
-    Key? key,
+    super.key,
     String? contentPath,
     String? caption,
     String? platform,
   })  : _contentPath = contentPath ?? '',
         _caption = caption ?? '',
-        _platform = platform ?? 'all',
-        super(key: key);
+        _platform = platform ?? 'all';
 
   final String _contentPath;
   final String _caption;

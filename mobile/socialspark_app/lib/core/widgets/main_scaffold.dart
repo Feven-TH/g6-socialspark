@@ -7,11 +7,11 @@ class MainScaffold extends StatefulWidget {
   final bool showBottomNav;
 
   const MainScaffold({
-    Key? key,
+    super.key,
     required this.child,
     this.currentIndex = 0,
     this.showBottomNav = true,
-  }) : super(key: key);
+  });
 
   @override
   State<MainScaffold> createState() => _MainScaffoldState();
