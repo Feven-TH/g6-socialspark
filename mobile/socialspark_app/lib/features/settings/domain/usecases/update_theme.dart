@@ -1,6 +1,5 @@
 import 'package:socialspark_app/features/settings/domain/repositories/settings_repository.dart';
 
-
 class UpdateTheme {
   final SettingsRepository repository;
 
