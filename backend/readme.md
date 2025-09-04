@@ -11,6 +11,14 @@ Before you begin, ensure you have the following installed and configured:
 3.  **[Pixabay API key](https://pixabay.com/api/docs/)**
 4.  **[Gemini API key](https://ai.google.dev/pricing)**
 5.  **[Freesound API key](https://freesound.org/docs/api/)**
+6. **[Ayrshare API Key](https://www.ayrshare.com/)**  
+  SocialSpark uses Ayrshare to publish image-only posts to social media platforms (Instagram, Facebook,  etc.), and users must link their accounts via the Ayrshare dashboard.
+
+   1. Go to [Ayrshare Dashboard](https://app.ayrshare.com/auth/register) and create a free account.  
+   2. After signing in, navigate to **API Key** in your Ayrshare dashboard.  
+   3. Copy your API key and paste it into your `.env` file.
+
+
 
 ## Getting Started (Docker - Recommended)
 
