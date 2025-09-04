@@ -112,6 +112,16 @@ export default function ContentCard({
             {new Date(item.createdAt).toLocaleDateString()}
           </span>
           <div className="flex gap-1">
+            <Link href={`/post/${item.id}`} passHref>
+              <Button
+                size="sm"
+                variant="ghost"
+                title="Post or schedule"
+                className="p-1 sm:p-2"
+              >
+                <Share className="w-3 h-3 sm:w-4 sm:h-4" />
+              </Button>
+            </Link>
             <Button
               size="sm"
               variant="ghost"
@@ -138,7 +148,7 @@ export default function ContentCard({
               size="sm"
               variant="ghost"
               onClick={() => onSchedule(item)}
-              title="Schedule snap"
+              title="set reminder to post"
               className="p-1 sm:p-2"
             >
               <Clock className="w-3 h-3 sm:w-4 sm:h-4" />

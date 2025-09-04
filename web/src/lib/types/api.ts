@@ -1,4 +1,3 @@
-
 export interface BrandPresets {
   name: string;
   tone?: string;
@@ -20,7 +19,6 @@ export interface GenerateCaptionResponse {
   hashtags: string[];
 }
 
-
 export interface GenerateImageRequest {
   idea: string;
   aspect_ratio?: string;
@@ -30,7 +28,6 @@ export interface GenerateImageRequest {
 export interface GenerateImageResponse {
   image_url: string;
 }
-
 
 export interface GenerateStoryboardRequest {
   idea: string;
@@ -66,7 +63,6 @@ export interface GetTaskResponse {
   video_url?: string;
 }
 
-
 export interface ExportRequest {
   draft_id: string;
 }
@@ -76,18 +72,17 @@ export interface ExportResponse {
   asset_url: string;
 }
 
-
 export interface ScheduleRequest {
   asset_id: string;
-  platform: string;
-  run_at: string;
+  platforms: string[];
+  run_at?: string; // Optional for immediate posts
+  post_text: string;
 }
 
 export interface ScheduleResponse {
-  status: "queued" | "failed";
-  scheduled_for: string;
-  mode?: "api";
-  platform_post_id?: string;
+  status: string;
+  scheduled_at: string;
+  postID: string;
 }
 
 export interface ApiError {
