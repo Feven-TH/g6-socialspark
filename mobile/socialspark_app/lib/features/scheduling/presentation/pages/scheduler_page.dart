@@ -4,25 +4,24 @@ import 'package:socialspark_app/core/widgets/main_scaffold.dart';
 import 'package:socialspark_app/features/library/data/library_data_service.dart';
 
 class SchedulerPage extends StatefulWidget {
+  final dynamic item;
+  final int? index;
+  
   const SchedulerPage({
     Key? key,
-    String? contentPath,
-    String? caption,
-    String? platform,
-    required this.itemIndex,
-  })  : _contentPath = contentPath ?? '',
-        _caption = caption ?? '',
-        _platform = platform ?? 'all',
-        super(key: key);
-
-  final String _contentPath;
-  final String _caption;
-  final String _platform;
-  final int itemIndex;
+    this.item,
+    this.index,
+  }) : super(key: key);
 
   @override
   _SchedulerPageState createState() => _SchedulerPageState();
+  
+  String get _contentPath => item?['image'] ?? '';
+  String get _caption => item?['description'] ?? '';
+  String get _platform => item?['platform']?.toLowerCase() ?? 'all';
+  int get itemIndex => index ?? -1;
 }
+
 
 class _SchedulerPageState extends State<SchedulerPage> {
   DateTime _scheduledDate = DateTime.now();
@@ -89,7 +88,7 @@ class _SchedulerPageState extends State<SchedulerPage> {
                 IconButton(
                   icon: const Icon(Icons.arrow_back_ios_new_rounded,
                       size: 20, color: Colors.white),
-                  onPressed: () => context.go('/library'),
+                  onPressed: () => Navigator.of(context).pop(),
                 ),
                 const SizedBox(width: 8),
                 const Text(
