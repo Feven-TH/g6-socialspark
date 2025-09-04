@@ -35,7 +35,6 @@ import {
   Hash,
   Type,
   Play,
-  RotateCcw,
   AlertCircle,
 } from "lucide-react";
 
@@ -579,7 +578,7 @@ export default function Dashboard() {
                               caption: e.target.value,
                             })
                           }
-                          className="min-h-[120px]  text-gray-500"
+                          className="min-h-[120px]  text-gray-500 text-sm tracking-wide"
                           dir={language === "am" ? "ltr" : "ltr"}
                         />
                       </div>
