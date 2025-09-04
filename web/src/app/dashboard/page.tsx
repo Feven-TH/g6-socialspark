@@ -19,14 +19,13 @@ import {
   SelectValue,
 } from "@/components/select";
 import { Progress } from "@/components/progress";
+import { useRouter } from "next/navigation";
 import Header from "@/components/commonheader";
 import {
   Sparkles,
   Instagram,
   Video,
   ImageIcon,
-  Download,
-  Clock,
   Palette,
   Zap,
   Coffee,
@@ -39,7 +38,6 @@ import {
   RotateCcw,
   AlertCircle,
 } from "lucide-react";
-import { v4 as uuidv4 } from "uuid";
 
 import {
   useGenerateCaptionMutation,
@@ -50,6 +48,8 @@ import {
 } from "@/lib/redux/services/api";
 import { Alert, AlertDescription } from "@/components/alert";
 import type { Brand } from "../types/common";
+import { StoryboardShot } from "@/lib/types/api";
+import ActionButton from "./ActionButton";
 
 interface GetTaskResponse {
   status: "queued" | "ready" | "failed";
@@ -57,6 +57,7 @@ interface GetTaskResponse {
 }
 
 export default function Dashboard() {
+  const router = useRouter();
   const [language, setLanguage] = useState("en");
   const [currentStep, setCurrentStep] = useState("idea");
   const [idea, setIdea] = useState("");
@@ -75,6 +76,8 @@ export default function Dashboard() {
     imageUrl?: string;
     videoUrl?: string;
     taskId: string;
+    storyboard?: StoryboardShot[];
+    overlays?: { text: string; position?: string }[];
   };
 
   const [
@@ -112,7 +115,6 @@ export default function Dashboard() {
     }
   }, []);
 
-  // Use RTK Query for task status polling (REMOVED manual polling)
   const { data: taskStatus, error: taskError } = useGetTaskQuery(
     generatedContent.taskId,
     {
@@ -121,13 +123,11 @@ export default function Dashboard() {
     }
   );
 
-  // Handle task status updates
   useEffect(() => {
     if (taskStatus) {
       console.log("Task status:", taskStatus);
 
       if (taskStatus.status === "ready" && taskStatus.video_url) {
-        // Video is ready!
         setGeneratedContent((prev) => ({
           ...prev,
           videoUrl: taskStatus.video_url,
@@ -143,7 +143,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (taskError) {
-      console.error("Task polling error:", taskError);
+      console.error("Task status error:", taskError);
       setError("Failed to check video status");
       setIsGenerating(false);
     }
@@ -166,13 +166,16 @@ export default function Dashboard() {
       generate: "Generate Content",
       regenerate: "Regenerate",
       export: "Export",
-      schedule: "Schedule",
+      post: "Post",
+      schedule: "Reminder",
       share: "Share Now",
       caption: "Caption",
       hashtags: "Hashtags",
       preview: "Preview",
       brandPresets: "Brand Presets",
-      contentLibrary: "Content Library",
+      contentLibrary: "Add to Library",
+      edit: "Edit",
+
       examples: "Try these examples:",
       exampleCafe:
         "Create a fun TikTok for my café's new caramel macadamia latte",
@@ -180,6 +183,8 @@ export default function Dashboard() {
       exampleBeauty: "Beauty tip video for natural skincare routine",
     },
     am: {
+      edit: "",
+      post: "",
       title: "ሶሻል ስፓርክ",
       subtitle: "ለኢትዮጵያ አነስተኛ ንግዶች AI የይዘት ፈጠራ መሳሪያ",
       ideaPlaceholder: 'የይዘት ሀሳብዎን ይግለጹ... ለምሳሌ "ለካፌዬ አዲስ ላቴ አዝናኝ ቲክቶክ"',
@@ -304,10 +309,22 @@ export default function Dashboard() {
           );
         }
 
+        setGeneratedContent((prev) => ({
+          ...prev,
+          storyboard: storyboardResponse.shots,
+          overlays: storyboardResponse.shots.map((shot) => ({
+            text: shot.text,
+            position: "center",
+          })),
+        }));
+
         setProgress(70);
 
         const videoResponse = await renderVideo({
-          shots: storyboardResponse.shots,
+          shots: storyboardResponse.shots.map((shot) => ({
+            duration: shot.duration,
+            text: shot.text,
+          })),
           music: storyboardResponse.music || "upbeat",
         }).unwrap();
 
@@ -360,7 +377,6 @@ export default function Dashboard() {
       <Header />
       <div className="container mx-auto px-4 py-8 max-w-6xl">
         <div className="grid lg:grid-cols-3 gap-8">
-          {/* Main Content Creation Panel */}
           <div className="lg:col-span-2 space-y-6">
             {/* Idea Input Card */}
             <Card className="border-2 border-primary/20  bg-[#D9D9D9]/[0.72]">
@@ -471,7 +487,6 @@ export default function Dashboard() {
                   </div>
                 </div>
 
-                {/* Tone Selection */}
                 <div>
                   <label className="text-sm font-medium mb-2 block">Tone</label>
                   <div className="flex flex-wrap gap-2">
@@ -491,7 +506,6 @@ export default function Dashboard() {
                   </div>
                 </div>
 
-                {/* Generate Button */}
                 <Button
                   onClick={handleGenerate}
                   disabled={!idea.trim() || isGenerating}
@@ -540,9 +554,8 @@ export default function Dashboard() {
               </Alert>
             )}
 
-         
             {currentStep === "preview" && generatedContent.caption && (
-              <Card>
+              <Card className="bg-gray-100 shadow-lg">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 font-montserrat">
                     <Camera className="w-5 h-5 text-secondary" />
@@ -556,7 +569,7 @@ export default function Dashboard() {
                       <div>
                         <div className="flex items-center gap-2 mb-2">
                           <Type className="w-4 h-4" />
-                          <label className="font-medium">{t.caption}</label>
+                          <label>{t.caption}</label>
                         </div>
                         <Textarea
                           value={generatedContent.caption}
@@ -566,7 +579,7 @@ export default function Dashboard() {
                               caption: e.target.value,
                             })
                           }
-                          className="min-h-[120px]"
+                          className="min-h-[120px]  text-gray-500"
                           dir={language === "am" ? "ltr" : "ltr"}
                         />
                       </div>
@@ -583,7 +596,7 @@ export default function Dashboard() {
                               variant="secondary"
                               className="text-xs"
                             >
-                              #{hashtag}
+                              {hashtag}
                             </Badge>
                           ))}
                         </div>
@@ -614,13 +627,61 @@ export default function Dashboard() {
                                 className="w-full h-full object-cover"
                               />
                             ) : (
-                              <div className="text-center">
-                                <Play className="w-12 h-12 mx-auto mb-2 text-muted-foreground" />
-                                <p className="text-sm text-muted-foreground">
-                                  {generatedContent.taskId
-                                    ? "Video rendering..."
-                                    : "Video Preview"}
-                                </p>
+                              <div className="text-center space-y-4">
+                                {generatedContent.taskId ? (
+                                  <div className="relative">
+                                    <div className="relative w-24 h-24 mx-auto">
+                                      <div className="absolute inset-0 border-4 border-primary/20 rounded-full animate-spin">
+                                        <div className="absolute top-0 left-1/2 w-2 h-2 bg-primary rounded-full transform -translate-x-1/2 -translate-y-1"></div>
+                                      </div>
+
+                                      <div className="absolute inset-2 bg-primary/10 rounded-full animate-pulse flex items-center justify-center">
+                                        {generatedContent.taskId === "failed"}
+                                        <Video className="w-8 h-8 text-primary animate-bounce" />
+                                      </div>
+
+                                      <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 flex space-x-1">
+                                        <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
+                                        <div
+                                          className="w-2 h-2 bg-primary/60 rounded-full animate-pulse"
+                                          style={{ animationDelay: "0.2s" }}
+                                        ></div>
+                                        <div
+                                          className="w-2 h-2 bg-primary/30 rounded-full animate-pulse"
+                                          style={{ animationDelay: "0.4s" }}
+                                        ></div>
+                                      </div>
+                                    </div>
+
+                                    <div className="mt-8">
+                                      <p className="text-sm font-medium text-primary">
+                                        {getVideoStatusMessage()}
+                                      </p>
+                                      <div className="flex justify-center mt-2">
+                                        <div className="flex space-x-1">
+                                          <div className="w-1 h-1 bg-muted-foreground rounded-full animate-bounce"></div>
+                                          <div
+                                            className="w-1 h-1 bg-muted-foreground rounded-full animate-bounce"
+                                            style={{ animationDelay: "0.1s" }}
+                                          ></div>
+                                          <div
+                                            className="w-1 h-1 bg-muted-foreground rounded-full animate-bounce"
+                                            style={{ animationDelay: "0.2s" }}
+                                          ></div>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="relative">
+                                    <div className="w-20 h-20 mx-auto bg-muted-foreground/10 rounded-full flex items-center justify-center mb-4">
+                                      <Play className="w-10 h-10 text-muted-foreground/60" />
+                                    </div>
+                                    <p className="text-sm text-muted-foreground">
+                                      Video Preview
+                                    </p>
+                                  </div>
+                                )}
                               </div>
                             )}
                           </div>
@@ -630,77 +691,13 @@ export default function Dashboard() {
                   </div>
 
                   {/* Action Buttons */}
-                  <div className="flex flex-wrap gap-3 pt-4 border-t">
-                    <Button onClick={handleGenerate} variant="outline">
-                      <RotateCcw className="w-4 h-4 mr-2" />
-                      {t.regenerate}
-                    </Button>
-                    <Button variant="secondary">
-                      <Download className="w-4 h-4 mr-2" />
-                      {t.export}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        localStorage.setItem(
-                          "schedulerContent",
-                          JSON.stringify({
-                            id: uuidv4(),
-                            caption: generatedContent.caption,
-                            hashtags: generatedContent.hashtags,
-                            imageUrl: generatedContent.imageUrl,
-                            videoUrl: generatedContent.videoUrl,
-                            platform,
-                            contentType,
-                            title: generatedContent.caption
-                              .split(" ")
-                              .slice(0, 6)
-                              .join(" "),
-                          })
-                        );
-                        window.location.href = "/scheduler";
-                      }}
-                    >
-                      <Clock className="w-4 h-4 mr-2" />
-                      {t.schedule}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        // Get existing library items or empty array
-                        const existingLibrary = JSON.parse(
-                          localStorage.getItem("libraryContent") || "[]"
-                        );
-
-                        existingLibrary.push({
-                          id: uuidv4(),
-                          caption: generatedContent.caption,
-                          hashtags: generatedContent.hashtags,
-                          imageUrl: generatedContent.imageUrl,
-                          videoUrl: generatedContent.videoUrl,
-                          platform,
-                          contentType,
-                          title: generatedContent.caption
-                            .split(" ")
-                            .slice(0, 6)
-                            .join(" "),
-                          createdAt: new Date().toISOString(),
-                        });
-
-                        // Save back to localStorage
-                        localStorage.setItem(
-                          "libraryContent",
-                          JSON.stringify(existingLibrary)
-                        );
-
-                        // Redirect to library page
-                        window.location.href = "/library";
-                      }}
-                    >
-                      <ImageIcon className="w-4 h-4 mr-2" />
-                      {t.contentLibrary}
-                    </Button>
-                  </div>
+                  <ActionButton
+                    generatedContent={generatedContent}
+                    platform={platform}
+                    contentType={contentType}
+                    t={t}
+                    onRegenerate={handleGenerate}
+                  />
                 </CardContent>
               </Card>
             )}
