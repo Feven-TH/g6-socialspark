@@ -1,4 +1,4 @@
-import '../../repositories/settings_repository.dart';
+import '../../domain/repositories/settings_repository.dart';
 
 class UpdateTheme {
   final SettingsRepository repository;
