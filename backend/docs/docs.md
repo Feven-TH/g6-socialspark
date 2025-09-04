@@ -258,8 +258,6 @@ Submit a storyboard for video rendering.
 {
   "task_id": "vid_12345678-1234-1234-1234-123456789abc",
   "status": "pending",
-  "message": "Video rendering task created successfully",
-  "estimated_completion": "2024-01-15T10:30:00Z"
 }
 ```
 
