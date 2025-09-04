@@ -17,6 +17,7 @@ def create_app():
 
     # Register routers
     app.include_router(videos.router, prefix="", tags=["videos"])
+    app.include_router(images.router, prefix="", tags=["images"])
     app.include_router(schedule.router, prefix="", tags=["schedule"])
     app.include_router(tasks.router, prefix="", tags=["tasks"])
     app.include_router(

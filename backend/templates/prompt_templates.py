@@ -27,3 +27,26 @@ The platform is {platform}.
 
 Generate a list of shots, where each shot has a duration, a description of the scene, and a suggestion for the background music genre.
 """
+
+IMAGE_GENERATION_PROMPT_TEMPLATE = """
+Create an optimized prompt for Stable Diffusion image generation:
+
+Original Prompt: {prompt}
+Style: {style}
+Brand: {brand_name}
+Brand Tone: {brand_tone}
+Brand Colors: {colors}
+Target Platform: {platform}
+
+Generate a detailed Stable Diffusion prompt that:
+1. Incorporates the original idea
+2. Applies the {style} style appropriately
+3. Uses brand colors: {colors}
+4. Matches the {brand_tone} tone
+5. Is optimized for {platform} platform requirements
+
+The prompt should be concise but descriptive, focusing on visual elements that work well with Stable Diffusion.
+Include relevant keywords for the {style} style (e.g., "photorealistic, highly detailed" for realistic style).
+
+Return the enhanced prompt that will be used for generation.
+"""
