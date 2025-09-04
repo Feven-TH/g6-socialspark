@@ -49,6 +49,22 @@ GoRouter buildRouter(SessionStore session) {
               name: 'about',
               builder: (_, __) => const AboutUsPage(),
             ),
+            GoRoute(
+              path: 'scheduler',
+              name: 'scheduler',
+              builder: (_, state) {
+                final extra = state.extra as Map<String, dynamic>?;
+                return SchedulerPage(
+                  item: extra?['item'],
+                  index: extra?['index'],
+                );
+              },
+            ),
+            GoRoute(
+              path: 'settings',
+              name: 'settings',
+              builder: (_, __) => const SettingsPage(),
+            ),
           ]),
       GoRoute(
         path: '/signup',
@@ -80,6 +96,7 @@ GoRouter buildRouter(SessionStore session) {
           // Allow /home, /home/about, and /library
           if (state.matchedLocation == '/home' ||
               state.matchedLocation == '/home/about' ||
+              state.matchedLocation == '/home/settings' ||
               state.matchedLocation == '/library') {
             return null;
           }

@@ -49,10 +49,7 @@ class _MainScaffoldState extends State<MainScaffold> {
         context.go('/scheduler');
         break;
       case 4:
-        // TODO: Implement Settings page
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Settings page coming soon!")),
-        );
+        context.go('/home/settings');
         break;
     }
   }

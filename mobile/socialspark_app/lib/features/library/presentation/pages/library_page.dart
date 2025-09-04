@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:socialspark_app/core/widgets/main_scaffold.dart';
 import 'package:go_router/go_router.dart';
+import 'package:socialspark_app/core/widgets/main_scaffold.dart';
+import 'package:socialspark_app/features/scheduling/presentation/pages/scheduler_page.dart';
 import 'package:socialspark_app/features/library/data/library_data_service.dart';
 
 class LibraryPage extends StatefulWidget {
@@ -36,7 +37,7 @@ class _LibraryPageState extends State<LibraryPage> {
     }).toList();
 
     return MainScaffold(
-      currentIndex: 1,
+      currentIndex: 1, // This will highlight the Library tab in the bottom navigation bar
       child: CustomScrollView(
         slivers: [
           SliverAppBar(
@@ -164,6 +165,7 @@ class _LibraryPageState extends State<LibraryPage> {
                 (context, index) {
                   final item = filteredData[index];
                   return _ContentCard(
+                    key: ValueKey('content_$index'),
                     status: item['status']!,
                     image: item['image']!,
                     title: item['title']!,
@@ -174,10 +176,15 @@ class _LibraryPageState extends State<LibraryPage> {
                     type: item['type']!,
                     onDelete: () => _deleteItem(index),
                     onSchedule: () {
-                      context.go('/scheduler', extra: {
-                        'item': item,
-                        'index': _dummyData.indexOf(item),
-                      });
+                      // Ensure we're using the correct context for navigation
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => SchedulerPage(
+                            item: item,
+                            index: _dummyData.indexOf(item),
+                          ),
+                        ),
+                      );
                     },
                   );
                 },
@@ -204,6 +211,7 @@ class _ContentCard extends StatefulWidget {
   final VoidCallback onSchedule;
 
   const _ContentCard({
+    Key? key,
     required this.status,
     required this.image,
     required this.title,
@@ -214,7 +222,7 @@ class _ContentCard extends StatefulWidget {
     required this.type,
     required this.onDelete,
     required this.onSchedule,
-  });
+  }) : super(key: key);
 
   @override
   State<_ContentCard> createState() => _ContentCardState();
@@ -232,9 +240,8 @@ class _ContentCardState extends State<_ContentCard> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Image with status badge and hover effect
-          MouseRegion(
-            onEnter: (_) => setState(() => _isHovering = true),
-            onExit: (_) => setState(() => _isHovering = false),
+          GestureDetector(
+            onTap: widget.onSchedule, // Make the whole image tappable for scheduling
             child: Stack(
               alignment: Alignment.center,
               children: [
@@ -245,7 +252,7 @@ class _ContentCardState extends State<_ContentCard> {
                   ),
                   child: Image.asset(
                     widget.image,
-                    height: 180, // Increased image height
+                    height: 180,
                     width: double.infinity,
                     fit: BoxFit.cover,
                   ),
@@ -254,8 +261,7 @@ class _ContentCardState extends State<_ContentCard> {
                   top: 8,
                   left: 8,
                   child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
                       color: widget.status == 'published'
                           ? const Color(0xFF0F2137)
@@ -270,30 +276,44 @@ class _ContentCardState extends State<_ContentCard> {
                     ),
                   ),
                 ),
-                if (_isHovering)
-                  Container(
-                    height: 180,
-                    decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.5),
-                      borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(12),
-                        topRight: Radius.circular(12),
+                // Hover overlay with schedule button
+                MouseRegion(
+                  onEnter: (_) => setState(() => _isHovering = true),
+                  onExit: (_) => setState(() => _isHovering = false),
+                  child: AnimatedOpacity(
+                    opacity: _isHovering ? 1.0 : 0.0,
+                    duration: const Duration(milliseconds: 200),
+                    child: Container(
+                      height: 180,
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.6),
+                        borderRadius: const BorderRadius.only(
+                          topLeft: Radius.circular(12),
+                          topRight: Radius.circular(12),
+                        ),
                       ),
-                    ),
-                    child: Center(
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          _HoverButton(
-                            icon: Icons.schedule,
-                            onPressed: widget.onSchedule,
-                          ),
-                          const SizedBox(width: 16),
-                          _HoverButton(icon: Icons.edit, onPressed: () {}),
-                        ],
+                      child: Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.schedule, size: 40, color: Colors.white),
+                              onPressed: widget.onSchedule,
+                            ),
+                            const SizedBox(height: 8),
+                            const Text(
+                              'Schedule Post',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
+                ),
               ],
             ),
           ),
