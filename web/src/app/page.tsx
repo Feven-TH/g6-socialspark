@@ -18,8 +18,18 @@ import {
   ArrowRight,
 } from "lucide-react";
 import Header from "../components/HomeHeader";
+import { useEffect, useState } from "react";
+import { Brand } from "./types/common";
 
 export default function LandingPage() {
+  const [brand, setBrand] = useState<Brand | null>(null);
+
+  useEffect(() => {
+    const brandData = localStorage.getItem("brandSetting");
+    if (brandData) {
+      setBrand(JSON.parse(brandData));
+    }
+  });
   const features = [
     {
       icon: <Sparkles className="w-6 h-6 text-primary" />,
@@ -65,6 +75,14 @@ export default function LandingPage() {
     },
   ];
 
+  const handleStart = () => {
+    if (brand) {
+      window.location.href = "/library";
+    } else {
+      window.location.href = "/Brand";
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -95,14 +113,12 @@ export default function LandingPage() {
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button
+                onClick={handleStart}
                 size="lg"
                 className="h-14 px-8 text-lg font-semibold"
-                asChild
               >
-                <Link href="/library">
-                  Start Creating Free
-                  <ArrowRight className="w-5 h-5 ml-2" />
-                </Link>
+                Start Creating Free
+                <ArrowRight className="w-5 h-5 ml-2" />
               </Button>
             </div>
           </div>
@@ -162,15 +178,13 @@ export default function LandingPage() {
             content with SocialSpark
           </p>
           <Button
+            onClick={handleStart}
             size="lg"
             variant="secondary"
             className="h-14 px-8 text-lg font-semibold"
-            asChild
           >
-            <Link href="/library">
-              Start Your Free Trial
-              <ArrowRight className="w-5 h-5 ml-2" />
-            </Link>
+            Start Your Free Trial
+            <ArrowRight className="w-5 h-5 ml-2" />
           </Button>
         </div>
       </section>

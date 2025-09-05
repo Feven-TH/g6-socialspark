@@ -1,5 +1,4 @@
 "use client";
-import Image from "next/image";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/button";
 import {
@@ -19,14 +18,13 @@ import {
   SelectValue,
 } from "@/components/select";
 import { Progress } from "@/components/progress";
+import { useRouter } from "next/navigation";
 import Header from "@/components/commonheader";
 import {
   Sparkles,
   Instagram,
   Video,
   ImageIcon,
-  Download,
-  Clock,
   Palette,
   Zap,
   Coffee,
@@ -36,10 +34,8 @@ import {
   Hash,
   Type,
   Play,
-  RotateCcw,
   AlertCircle,
 } from "lucide-react";
-import { v4 as uuidv4 } from "uuid";
 
 import {
   useGenerateCaptionMutation,
@@ -47,9 +43,13 @@ import {
   useRenderVideoMutation,
   useGenerateStoryboardMutation,
   useGetTaskQuery,
+  useRenderImageMutation,
+  useGetImageStatusQuery,
 } from "@/lib/redux/services/api";
 import { Alert, AlertDescription } from "@/components/alert";
 import type { Brand } from "../types/common";
+import { StoryboardShot } from "@/lib/types/api";
+import ActionButton from "./ActionButton";
 
 interface GetTaskResponse {
   status: "queued" | "ready" | "failed";
@@ -57,6 +57,7 @@ interface GetTaskResponse {
 }
 
 export default function Dashboard() {
+  const router = useRouter();
   const [language, setLanguage] = useState("en");
   const [currentStep, setCurrentStep] = useState("idea");
   const [idea, setIdea] = useState("");
@@ -75,6 +76,9 @@ export default function Dashboard() {
     imageUrl?: string;
     videoUrl?: string;
     taskId: string;
+    imageId: string;
+    storyboard?: StoryboardShot[];
+    overlays?: { text: string; position?: string }[];
   };
 
   const [
@@ -90,6 +94,8 @@ export default function Dashboard() {
   const [renderVideo, { isLoading: isVideoLoading, error: videoError }] =
     useRenderVideoMutation();
 
+  const [renderImage, { error: imageRenderError }] = useRenderImageMutation();
+
   const isLoading =
     isCaptionLoading || isImageLoading || isStoryboardLoading || isVideoLoading;
 
@@ -98,6 +104,7 @@ export default function Dashboard() {
     hashtags: [],
     imageUrl: "",
     videoUrl: "",
+    imageId: "",
     taskId: "",
   });
 
@@ -112,7 +119,6 @@ export default function Dashboard() {
     }
   }, []);
 
-  // Use RTK Query for task status polling (REMOVED manual polling)
   const { data: taskStatus, error: taskError } = useGetTaskQuery(
     generatedContent.taskId,
     {
@@ -121,13 +127,19 @@ export default function Dashboard() {
     }
   );
 
-  // Handle task status updates
+  const { data: imageStatus, error: imageStatusError } = useGetImageStatusQuery(
+    generatedContent.imageId,
+    {
+      skip: !generatedContent.imageId,
+      pollingInterval: 2000,
+    }
+  );
+
   useEffect(() => {
     if (taskStatus) {
       console.log("Task status:", taskStatus);
 
       if (taskStatus.status === "ready" && taskStatus.video_url) {
-        // Video is ready!
         setGeneratedContent((prev) => ({
           ...prev,
           videoUrl: taskStatus.video_url,
@@ -142,20 +154,56 @@ export default function Dashboard() {
   }, [taskStatus]);
 
   useEffect(() => {
+    if (imageStatusError) {
+      console.error("Image status error:", imageStatusError);
+      setError("Failed to check image status");
+      setIsGenerating(false);
+    }
+  }, [imageStatusError]);
+
+  useEffect(() => {
     if (taskError) {
-      console.error("Task polling error:", taskError);
+      console.error("Task status error:", taskError);
       setError("Failed to check video status");
       setIsGenerating(false);
     }
   }, [taskError]);
 
   useEffect(() => {
-    const error = captionError || imageError || storyboardError || videoError;
+    if (imageStatus) {
+      console.log("FULL Image status:", imageStatus);
+      const status = imageStatus.video_url?.status?.toLowerCase();
+      const imageUrl = imageStatus.video_url?.image_url;
+
+      console.log("Nested status:", status);
+      console.log("Image URL:", imageUrl);
+
+      if ((status === "ready" || status === "completed") && imageUrl) {
+        setGeneratedContent((prev) => ({
+          ...prev,
+          imageUrl: imageUrl,
+        }));
+        setProgress(100);
+        setCurrentStep("preview");
+      } else if (status === "failed" || status === "error") {
+        setError("Image generation failed. Please try again.");
+        setIsGenerating(false);
+      }
+    }
+  }, [imageStatus]);
+
+  useEffect(() => {
+    const error =
+      captionError ||
+      imageError ||
+      storyboardError ||
+      videoError ||
+      imageRenderError;
     if (error) {
       setError("Failed to generate content. Please try again.");
       setIsGenerating(false);
     }
-  }, [captionError, imageError, storyboardError, videoError]);
+  }, [captionError, imageError, storyboardError, videoError, imageRenderError]);
 
   const translations = {
     en: {
@@ -166,13 +214,16 @@ export default function Dashboard() {
       generate: "Generate Content",
       regenerate: "Regenerate",
       export: "Export",
-      schedule: "Schedule",
+      post: "Post",
+      schedule: "Reminder",
       share: "Share Now",
       caption: "Caption",
       hashtags: "Hashtags",
       preview: "Preview",
       brandPresets: "Brand Presets",
-      contentLibrary: "Content Library",
+      contentLibrary: "Add to Library",
+      edit: "Edit",
+
       examples: "Try these examples:",
       exampleCafe:
         "Create a fun TikTok for my café's new caramel macadamia latte",
@@ -180,6 +231,8 @@ export default function Dashboard() {
       exampleBeauty: "Beauty tip video for natural skincare routine",
     },
     am: {
+      edit: "",
+      post: "",
       title: "ሶሻል ስፓርክ",
       subtitle: "ለኢትዮጵያ አነስተኛ ንግዶች AI የይዘት ፈጠራ መሳሪያ",
       ideaPlaceholder: 'የይዘት ሀሳብዎን ይግለጹ... ለምሳሌ "ለካፌዬ አዲስ ላቴ አዝናኝ ቲክቶክ"',
@@ -214,6 +267,7 @@ export default function Dashboard() {
       hashtags: [],
       imageUrl: "",
       videoUrl: "",
+      imageId: "",
       taskId: "",
     });
 
@@ -228,7 +282,7 @@ export default function Dashboard() {
       const captionResponse = await generateCaption({
         idea,
         platform,
-        language,
+        language: "amharic",
         hashtags_count: 6,
         brand_presets: {
           name: brand.businessName || "",
@@ -249,32 +303,53 @@ export default function Dashboard() {
       }));
 
       setProgress(40);
-
       if (contentType === "image") {
         setProgress(60);
-        const imageResponse = await generateImage({
-          idea,
-          aspect_ratio: platform === "instagram" ? "1:1" : "9:16",
-          brand_presets: {
-            name: brand.businessName || "",
-            tone: tone,
-            colors: [
-              brand.primaryColor || "#000000",
-              brand.secondaryColor || "#FFFFFF",
-            ],
-            default_hashtags: brand.defaultHashtags || [],
-            footer_text: `© ${brand.businessName} ${new Date().getFullYear()}`,
-          },
-        }).unwrap();
 
-        setGeneratedContent((prev) => ({
-          ...prev,
-          imageUrl: imageResponse.image_url,
-        }));
-        setProgress(100);
-        setCurrentStep("preview");
+        try {
+          const promptResponse = await generateImage({
+            prompt: idea,
+            style: "realistic",
+            aspect_ratio: platform === "instagram" ? "1:1" : "9:16",
+            platform,
+            brand_presets: {
+              name: brand.businessName || "",
+              tone: tone,
+              colors: [
+                brand.primaryColor || "#000000",
+                brand.secondaryColor || "#FFFFFF",
+              ],
+              default_hashtags: brand.defaultHashtags || [],
+              footer_text: `© ${
+                brand.businessName
+              } ${new Date().getFullYear()}`,
+            },
+          }).unwrap();
+
+          const renderResponse = await renderImage({
+            prompt_used: promptResponse.prompt_used,
+            style: promptResponse.style,
+            aspect_ratio: promptResponse.aspect_ratio,
+            platform: promptResponse.platform,
+          }).unwrap();
+
+          if (!renderResponse?.task_id) {
+            throw new Error("Failed to get image task ID");
+          }
+
+          setGeneratedContent((prev) => ({
+            ...prev,
+            imageId: renderResponse.task_id,
+          }));
+
+          setProgress(80);
+          setCurrentStep("preview");
+        } catch (error) {
+          console.error("Image generation failed:", error);
+          setError("Failed to generate image");
+          setIsGenerating(false);
+        }
       }
-
       if (contentType === "video") {
         setProgress(50);
         const storyboardResponse = await generateStoryboard({
@@ -304,10 +379,22 @@ export default function Dashboard() {
           );
         }
 
+        setGeneratedContent((prev) => ({
+          ...prev,
+          storyboard: storyboardResponse.shots,
+          overlays: storyboardResponse.shots.map((shot) => ({
+            text: shot.text,
+            position: "center",
+          })),
+        }));
+
         setProgress(70);
 
         const videoResponse = await renderVideo({
-          shots: storyboardResponse.shots,
+          shots: storyboardResponse.shots.map((shot) => ({
+            duration: shot.duration,
+            text: shot.text,
+          })),
           music: storyboardResponse.music || "upbeat",
         }).unwrap();
 
@@ -347,7 +434,24 @@ export default function Dashboard() {
         return "Processing video...";
     }
   };
+  const getImageStatusMessage = () => {
+    if (!generatedContent.imageId) return "Image Preview";
+    const status = imageStatus?.video_url?.status?.toLowerCase();
 
+    switch (status) {
+      case "queued":
+        return "Image in queue...";
+      case "processing":
+        return "Image is being generated...";
+      case "ready":
+      case "completed":
+        return "Image ready!";
+      case "failed":
+        return "Image failed - try again";
+      default:
+        return "Processing image...";
+    }
+  };
   const businessTypes = [
     { icon: Coffee, label: "Café", value: "cafe" },
     { icon: ShoppingBag, label: "Retail", value: "retail" },
@@ -360,7 +464,6 @@ export default function Dashboard() {
       <Header />
       <div className="container mx-auto px-4 py-8 max-w-6xl">
         <div className="grid lg:grid-cols-3 gap-8">
-          {/* Main Content Creation Panel */}
           <div className="lg:col-span-2 space-y-6">
             {/* Idea Input Card */}
             <Card className="border-2 border-primary/20  bg-[#D9D9D9]/[0.72]">
@@ -471,7 +574,6 @@ export default function Dashboard() {
                   </div>
                 </div>
 
-                {/* Tone Selection */}
                 <div>
                   <label className="text-sm font-medium mb-2 block">Tone</label>
                   <div className="flex flex-wrap gap-2">
@@ -491,7 +593,6 @@ export default function Dashboard() {
                   </div>
                 </div>
 
-                {/* Generate Button */}
                 <Button
                   onClick={handleGenerate}
                   disabled={!idea.trim() || isGenerating}
@@ -522,10 +623,18 @@ export default function Dashboard() {
                         ? "Generating caption..."
                         : progress < 60
                         ? "Creating hashtags..."
+                        : progress < 70
+                        ? "Generating image prompt..."
                         : progress < 80
-                        ? "Generating visual content..."
+                        ? contentType === "image"
+                          ? imageStatus?.status === "PROCESSING"
+                            ? "Image is being generated..."
+                            : "Rendering image..."
+                          : "Generating storyboard..."
                         : progress < 95
-                        ? "Creating video..."
+                        ? contentType === "image"
+                          ? "Finalizing image..."
+                          : "Rendering video..."
                         : "Finalizing content..."}
                     </p>
                   </div>
@@ -540,9 +649,8 @@ export default function Dashboard() {
               </Alert>
             )}
 
-         
             {currentStep === "preview" && generatedContent.caption && (
-              <Card>
+              <Card className="bg-gray-100 shadow-lg">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 font-montserrat">
                     <Camera className="w-5 h-5 text-secondary" />
@@ -556,7 +664,7 @@ export default function Dashboard() {
                       <div>
                         <div className="flex items-center gap-2 mb-2">
                           <Type className="w-4 h-4" />
-                          <label className="font-medium">{t.caption}</label>
+                          <label>{t.caption}</label>
                         </div>
                         <Textarea
                           value={generatedContent.caption}
@@ -566,7 +674,7 @@ export default function Dashboard() {
                               caption: e.target.value,
                             })
                           }
-                          className="min-h-[120px]"
+                          className="min-h-[120px]  text-gray-500 text-sm tracking-wide"
                           dir={language === "am" ? "ltr" : "ltr"}
                         />
                       </div>
@@ -583,7 +691,7 @@ export default function Dashboard() {
                               variant="secondary"
                               className="text-xs"
                             >
-                              #{hashtag}
+                              {hashtag}
                             </Badge>
                           ))}
                         </div>
@@ -596,31 +704,161 @@ export default function Dashboard() {
                         <ImageIcon className="w-4 h-4" />
                         <label className="font-medium">{t.preview}</label>
                       </div>
-                      <div className="aspect-square bg-muted rounded-lg overflow-hidden">
+
+                      <div className="aspect-square bg-muted rounded-xl overflow-hidden border shadow-sm">
                         {contentType === "image" ? (
-                          <Image
-                            src={
-                              generatedContent.imageUrl || "/placeholder.svg"
-                            }
-                            alt="Generated content"
-                            className="w-full h-full object-cover"
-                          />
+                          generatedContent.imageUrl ? (
+                            <img
+                              src={generatedContent.imageUrl}
+                              alt="Generated content"
+                              className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                            />
+                          ) : (
+                            <div className="w-full h-full bg-muted flex items-center justify-center">
+                              {generatedContent.imageId ? (
+                                <div className="relative text-center space-y-4">
+                                  {getImageStatusMessage() ===
+                                    "Image failed - try again" || error ? (
+                                    <>
+                                      <div className="w-20 h-20 mx-auto bg-red-100 rounded-full flex items-center justify-center">
+                                        <ImageIcon className="w-10 h-10 text-red-500" />
+                                      </div>
+                                      <p className="text-sm font-medium text-red-500">
+                                        {getImageStatusMessage()}
+                                      </p>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <div className="relative w-24 h-24 mx-auto">
+                                        <div className="absolute inset-0 border-4 border-primary/20 rounded-full animate-spin">
+                                          <div className="absolute top-0 left-1/2 w-2 h-2 bg-primary rounded-full transform -translate-x-1/2 -translate-y-1"></div>
+                                        </div>
+
+                                        <div className="absolute inset-2 bg-primary/10 rounded-full animate-pulse flex items-center justify-center">
+                                          <ImageIcon className="w-8 h-8 text-primary animate-bounce" />
+                                        </div>
+
+                                        <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 flex space-x-1">
+                                          <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
+                                          <div
+                                            className="w-2 h-2 bg-primary/60 rounded-full animate-pulse"
+                                            style={{ animationDelay: "0.2s" }}
+                                          ></div>
+                                          <div
+                                            className="w-2 h-2 bg-primary/30 rounded-full animate-pulse"
+                                            style={{ animationDelay: "0.4s" }}
+                                          ></div>
+                                        </div>
+                                      </div>
+
+                                      <div className="mt-8">
+                                        <p className="text-sm font-medium text-primary">
+                                          {getImageStatusMessage()}
+                                        </p>
+                                        <div className="flex justify-center mt-2">
+                                          <div className="flex space-x-1">
+                                            <div className="w-1 h-1 bg-muted-foreground rounded-full animate-bounce"></div>
+                                            <div
+                                              className="w-1 h-1 bg-muted-foreground rounded-full animate-bounce"
+                                              style={{ animationDelay: "0.1s" }}
+                                            ></div>
+                                            <div
+                                              className="w-1 h-1 bg-muted-foreground rounded-full animate-bounce"
+                                              style={{ animationDelay: "0.2s" }}
+                                            ></div>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </>
+                                  )}
+                                </div>
+                              ) : (
+                                <div className="relative text-center">
+                                  <div className="w-20 h-20 mx-auto bg-muted-foreground/10 rounded-full flex items-center justify-center mb-4">
+                                    <ImageIcon className="w-10 h-10 text-muted-foreground/60" />
+                                  </div>
+                                  <p className="text-sm text-muted-foreground">
+                                    Image Preview
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+                          )
                         ) : (
                           <div className="w-full h-full bg-muted flex items-center justify-center">
                             {generatedContent.videoUrl ? (
                               <video
                                 src={generatedContent.videoUrl}
                                 controls
-                                className="w-full h-full object-cover"
+                                className="w-full h-full object-cover rounded-lg hover:scale-105 transition-transform duration-300"
                               />
                             ) : (
-                              <div className="text-center">
-                                <Play className="w-12 h-12 mx-auto mb-2 text-muted-foreground" />
-                                <p className="text-sm text-muted-foreground">
-                                  {generatedContent.taskId
-                                    ? "Video rendering..."
-                                    : "Video Preview"}
-                                </p>
+                              <div className="text-center space-y-4">
+                                {generatedContent.taskId ? (
+                                  getVideoStatusMessage() ===
+                                  "Video failed - try again" ? (
+                                    <>
+                                      <div className="w-20 h-20 mx-auto bg-red-100 rounded-full flex items-center justify-center">
+                                        <Video className="w-10 h-10 text-red-500" />
+                                      </div>
+                                      <p className="text-sm font-medium text-red-500">
+                                        {getVideoStatusMessage()}
+                                      </p>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <div className="relative w-24 h-24 mx-auto">
+                                        <div className="absolute inset-0 border-4 border-primary/20 rounded-full animate-spin">
+                                          <div className="absolute top-0 left-1/2 w-2 h-2 bg-primary rounded-full transform -translate-x-1/2 -translate-y-1"></div>
+                                        </div>
+
+                                        <div className="absolute inset-2 bg-primary/10 rounded-full animate-pulse flex items-center justify-center">
+                                          <Video className="w-8 h-8 text-primary animate-bounce" />
+                                        </div>
+
+                                        <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 flex space-x-1">
+                                          <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
+                                          <div
+                                            className="w-2 h-2 bg-primary/60 rounded-full animate-pulse"
+                                            style={{ animationDelay: "0.2s" }}
+                                          ></div>
+                                          <div
+                                            className="w-2 h-2 bg-primary/30 rounded-full animate-pulse"
+                                            style={{ animationDelay: "0.4s" }}
+                                          ></div>
+                                        </div>
+                                      </div>
+
+                                      <div className="mt-8">
+                                        <p className="text-sm font-medium text-primary">
+                                          {getVideoStatusMessage()}
+                                        </p>
+                                        <div className="flex justify-center mt-2">
+                                          <div className="flex space-x-1">
+                                            <div className="w-1 h-1 bg-muted-foreground rounded-full animate-bounce"></div>
+                                            <div
+                                              className="w-1 h-1 bg-muted-foreground rounded-full animate-bounce"
+                                              style={{ animationDelay: "0.1s" }}
+                                            ></div>
+                                            <div
+                                              className="w-1 h-1 bg-muted-foreground rounded-full animate-bounce"
+                                              style={{ animationDelay: "0.2s" }}
+                                            ></div>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </>
+                                  )
+                                ) : (
+                                  <div className="relative">
+                                    <div className="w-20 h-20 mx-auto bg-muted-foreground/10 rounded-full flex items-center justify-center mb-4">
+                                      <Play className="w-10 h-10 text-muted-foreground/60" />
+                                    </div>
+                                    <p className="text-sm text-muted-foreground">
+                                      Video Preview
+                                    </p>
+                                  </div>
+                                )}
                               </div>
                             )}
                           </div>
@@ -630,77 +868,13 @@ export default function Dashboard() {
                   </div>
 
                   {/* Action Buttons */}
-                  <div className="flex flex-wrap gap-3 pt-4 border-t">
-                    <Button onClick={handleGenerate} variant="outline">
-                      <RotateCcw className="w-4 h-4 mr-2" />
-                      {t.regenerate}
-                    </Button>
-                    <Button variant="secondary">
-                      <Download className="w-4 h-4 mr-2" />
-                      {t.export}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        localStorage.setItem(
-                          "schedulerContent",
-                          JSON.stringify({
-                            id: uuidv4(),
-                            caption: generatedContent.caption,
-                            hashtags: generatedContent.hashtags,
-                            imageUrl: generatedContent.imageUrl,
-                            videoUrl: generatedContent.videoUrl,
-                            platform,
-                            contentType,
-                            title: generatedContent.caption
-                              .split(" ")
-                              .slice(0, 6)
-                              .join(" "),
-                          })
-                        );
-                        window.location.href = "/scheduler";
-                      }}
-                    >
-                      <Clock className="w-4 h-4 mr-2" />
-                      {t.schedule}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        // Get existing library items or empty array
-                        const existingLibrary = JSON.parse(
-                          localStorage.getItem("libraryContent") || "[]"
-                        );
-
-                        existingLibrary.push({
-                          id: uuidv4(),
-                          caption: generatedContent.caption,
-                          hashtags: generatedContent.hashtags,
-                          imageUrl: generatedContent.imageUrl,
-                          videoUrl: generatedContent.videoUrl,
-                          platform,
-                          contentType,
-                          title: generatedContent.caption
-                            .split(" ")
-                            .slice(0, 6)
-                            .join(" "),
-                          createdAt: new Date().toISOString(),
-                        });
-
-                        // Save back to localStorage
-                        localStorage.setItem(
-                          "libraryContent",
-                          JSON.stringify(existingLibrary)
-                        );
-
-                        // Redirect to library page
-                        window.location.href = "/library";
-                      }}
-                    >
-                      <ImageIcon className="w-4 h-4 mr-2" />
-                      {t.contentLibrary}
-                    </Button>
-                  </div>
+                  <ActionButton
+                    generatedContent={generatedContent}
+                    platform={platform}
+                    contentType={contentType}
+                    t={t}
+                    onRegenerate={handleGenerate}
+                  />
                 </CardContent>
               </Card>
             )}

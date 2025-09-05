@@ -20,12 +20,28 @@ export interface GenerateCaptionResponse {
 }
 
 export interface GenerateImageRequest {
-  idea: string;
-  aspect_ratio?: string;
-  brand_presets?: BrandPresets;
+  prompt: string;
+  style: string;
+  aspect_ratio: string;
+  platform: string;
+  brand_presets: BrandPresets;
 }
 
 export interface GenerateImageResponse {
+  prompt_used: string;
+  style: string;
+  aspect_ratio: string;
+  platform: string;
+}
+
+export interface RenderImageRequest {
+  prompt_used: string;
+  style: string;
+  aspect_ratio: string;
+  platform: string;
+}
+
+export interface RenderImageResponse {
   image_url: string;
 }
 
@@ -85,7 +101,12 @@ export interface ScheduleResponse {
   postID: string;
 }
 
-export interface ApiError {
-  error: string;
-  message: string;
+interface ApiErrorDetail {
+  loc?: (string | number)[];
+  msg: string;
+  type: string;
+}
+
+interface ApiErrorResponse {
+  detail: string | ApiErrorDetail[];
 }
