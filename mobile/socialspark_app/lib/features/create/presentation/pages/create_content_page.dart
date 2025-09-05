@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -7,6 +8,7 @@ import '../../../create/data/datasources/create_remote_ds.dart';
 import '../../../create/data/models/brand_preset.dart';
 import '../../../create/data/models/requests.dart';
 import '../../../create/data/models/task_status.dart';
+import '../widgets/video_generation_section.dart';
 
 class CreateContentPage extends StatefulWidget {
   const CreateContentPage({super.key});
@@ -19,6 +21,8 @@ class _CreateContentPageState extends State<CreateContentPage> {
 
   final _ideaCtrl = TextEditingController();
   final _captionCtrl = TextEditingController();
+  final _ctaCtrl = TextEditingController();
+
   final _platforms = const ['instagram', 'tiktok'];
   final _types = const ['image post', 'video', 'story', 'reel'];
   final _tones = const ['Playful', 'Professional', 'Casual', 'Elegant'];
@@ -26,137 +30,158 @@ class _CreateContentPageState extends State<CreateContentPage> {
   String _platform = 'instagram';
   String _ctype = 'image post';
   String _tone = 'Playful';
-  final List<String> _hashtags = ['AddisAbebaCafe', 'EthiopianCoffee'];
+  List<String> _hashtags = ['AddisAbebaCafe', 'EthiopianCoffee'];
+
   String? _imageUrl;
   String? _error;
   bool _loading = false;
+
+  // Typed key to call child's public start()
+  final GlobalKey<VideoGenerationSectionState> _videoKey =
+      GlobalKey<VideoGenerationSectionState>();
+
+  bool get _isVideoType =>
+      _ctype.contains('video') || _ctype.contains('story') || _ctype.contains('reel');
 
   @override
   void initState() {
     super.initState();
     _ds = CreateRemoteDataSource(ApiClient());
+    _ideaCtrl.text = '15s TikTok for wildlife conservation ad';
+    _ctaCtrl.text = 'call and reserve';
   }
 
   @override
   void dispose() {
     _ideaCtrl.dispose();
     _captionCtrl.dispose();
+    _ctaCtrl.dispose();
     super.dispose();
   }
 
-  BrandPreset _buildBrand() => BrandPreset(
-        name: "SocialSpark Demo",
-        colors: ["#003366", "#F9C51C", "#E74C3C"],
+  BrandPreset _brand() => BrandPreset(
+        name: "Wildlife",
+        colors: ["#FBBF24", "#0D2A4B"],
         tone: _tone,
         defaultHashtags: _hashtags,
-        footerText: "Made with SocialSpark",
+        footerText: "Wildlife 2025",
       );
+
+  String _aspectForPlatform({required bool video}) {
+    if (_platform == 'tiktok') return "9:16";
+    if (video) return "9:16";
+    return "1:1";
+  }
 
   Future<void> _generateAll() async {
     setState(() {
       _loading = true;
       _error = null;
-      _imageUrl = null;
+      if (!_isVideoType) _imageUrl = null; // image flow will set preview
     });
 
     final idea = _ideaCtrl.text.trim().isEmpty
-        ? "Caramel Macadamia latte promo"
+        ? "15s TikTok for wildlife conservation ad"
         : _ideaCtrl.text.trim();
 
-    final isVideo = _ctype.contains('video') ||
-        _ctype.contains('story') ||
-        _ctype.contains('reel');
-
     try {
-      // 1) Caption (backend expects `idea`)
+      // Always get a caption
       final caption = await _ds.generateCaption(
         CaptionRequest(
           idea: idea,
-          brandPresets: _buildBrand(),
+          brandPresets: _brand(),
           platform: _platform,
         ),
       );
 
-      String? previewUrl;
-
-      if (isVideo) {
-        // ---------- VIDEO FLOW ----------
-        final storyboardTask = await _ds.startStoryboard({
-          // backend expects `idea` for storyboard
-          "idea": idea,
-          "platform": _platform,
-          "brand_presets": _buildBrand().toJson(),
+      if (_isVideoType) {
+        // Show the section and auto-start it
+        setState(() {
+          _captionCtrl.text = caption;
+          _loading = false;
         });
 
-        // Render the storyboard → returns a render task id
-        final renderTask = await _ds.startVideoRender({
-          "task_id": storyboardTask,
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _videoKey.currentState?.start();
         });
-
-        // Poll status for the render task (reuse getImageStatus if server shares schema)
-        var status = await _ds.getImageStatus(renderTask);
-        final deadline = DateTime.now().add(const Duration(minutes: 5));
-        while (mounted) {
-          if (status.status == "succeeded" && status.url != null) break;
-          if (status.status == "failed") {
-            throw Exception(status.error ?? "Video failed");
-          }
-          if (DateTime.now().isAfter(deadline)) {
-            throw Exception("Timed out waiting for video");
-          }
-          await Future.delayed(const Duration(seconds: 2));
-          status = await _ds.getImageStatus(renderTask);
-        }
-        previewUrl = status.url; // likely .mp4 (you can show a video player later)
-      } else {
-       // ---------- IMAGE FLOW (generate prompt → render → poll) ----------
-final generatedPrompt = await _ds.startImageGeneration(
-  ImageGenerationRequest(
-    prompt: idea, // images expect `prompt`
-    style: "realistic",
-    aspectRatio: _platform == 'tiktok' ? "9:16" : "1:1",
-    brandPresets: _buildBrand(),
-    platform: _platform,
-  ),
-);
-
-// Use that prompt to start the render job -> returns TASK ID
-final renderTaskId = await _ds.startImageRender(
-  promptUsed: generatedPrompt,
-  style: "realistic",
-  aspectRatio: _platform == 'tiktok' ? "9:16" : "1:1",
-  platform: _platform,
-);
-
-// Poll /status/{task_id}
-var status = await _ds.getImageStatus(renderTaskId);
-final deadline = DateTime.now().add(const Duration(minutes: 5));
-while (mounted) {
-  if (status.status == "succeeded" && status.url != null) break;
-  if (status.status == "failed") {
-    throw Exception(status.error ?? "Image render failed");
-  }
-  if (DateTime.now().isAfter(deadline)) {
-    throw Exception("Timed out waiting for image");
-  }
-  await Future.delayed(const Duration(seconds: 2));
-  status = await _ds.getImageStatus(renderTaskId);
-}
-final previewUrl = status.url;
- // ---------- IMAGE FLOW (two-step) ----------
+        return;
       }
 
-      setState(() {
-        _captionCtrl.text = caption;
-        _imageUrl = previewUrl;
-        _loading = false;
-      });
+      // ------------------------ IMAGE FLOW ------------------------
+      final generatedPrompt = await _ds.startImageGeneration(
+        ImageGenerationRequest(
+          prompt: idea,
+          style: "realistic",
+          aspectRatio: _aspectForPlatform(video: false),
+          brandPresets: _brand(),
+          platform: _platform,
+        ),
+      );
+
+      final renderTaskId = await _ds.startImageRender(
+        promptUsed: generatedPrompt,
+        style: "realistic",
+        aspectRatio: _aspectForPlatform(video: false),
+        platform: _platform,
+      );
+
+      final TaskStatus status = await _pollTaskUntilDone(
+        renderTaskId,
+        fetch: _ds.getImageStatus,
+        timeout: const Duration(minutes: 5),
+        interval: const Duration(seconds: 2),
+      );
+
+      final s = status.status.trim().toUpperCase();
+      if (s == 'SUCCESS' || s == 'SUCCEEDED' || s == 'READY') {
+        final url = status.url;
+        if (url == null || url.isEmpty) throw Exception("Image success but no URL");
+        setState(() {
+          _captionCtrl.text = caption;
+          _imageUrl = url;
+          _loading = false;
+        });
+      } else {
+        throw Exception(status.error ?? "Image render failed (status=$s)");
+      }
     } catch (e) {
       setState(() {
         _loading = false;
-        _error = e.toString();
+        _error = _extractError(e);
       });
     }
+  }
+
+  String _extractError(Object e) {
+    if (e is DioException) {
+      final data = e.response?.data;
+      if (data is Map && data['detail'] != null) {
+        return data['detail'].toString();
+      }
+      return e.message ?? e.toString();
+    }
+    return e.toString();
+  }
+
+  Future<TaskStatus> _pollTaskUntilDone(
+    String taskId, {
+    required Future<TaskStatus> Function(String id) fetch,
+    Duration timeout = const Duration(minutes: 10),
+    Duration interval = const Duration(seconds: 2),
+  }) async {
+    final deadline = DateTime.now().add(timeout);
+    TaskStatus status = await fetch(taskId);
+
+    while (mounted) {
+      final s = status.status.trim().toUpperCase();
+      if (s == 'READY' || s == 'FAILED' || s == 'SUCCESS' || s == 'SUCCEEDED') break;
+      if (DateTime.now().isAfter(deadline)) {
+        throw Exception("Timed out waiting for task $taskId");
+      }
+      await Future.delayed(interval);
+      status = await fetch(taskId);
+    }
+    return status;
   }
 
   Future<void> _exportClipboard() async {
@@ -226,7 +251,7 @@ final previewUrl = status.url;
             controller: _ideaCtrl,
             maxLines: 4,
             decoration: InputDecoration(
-              hintText: 'Describe your idea… (e.g. TikTok for my new latte)',
+              hintText: 'Describe your idea… (e.g. 15s TikTok for wildlife conservation ad)',
               border:
                   OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
               filled: true,
@@ -256,8 +281,7 @@ final previewUrl = status.url;
                 items: _types
                     .map((t) => DropdownMenuItem(value: t, child: Text(t)))
                     .toList(),
-                onChanged: (v) =>
-                    setState(() => _ctype = v ?? 'image post'),
+                onChanged: (v) => setState(() => _ctype = v ?? 'image post'),
               ),
             ),
           ]),
@@ -268,11 +292,27 @@ final previewUrl = status.url;
           toneChips,
           const SizedBox(height: 12),
 
+          const Text('Call to Action (CTA) — used for video'),
+          const SizedBox(height: 6),
+          TextField(
+            controller: _ctaCtrl,
+            decoration: InputDecoration(
+              hintText: 'e.g., call and reserve',
+              border:
+                  OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              filled: true,
+              fillColor: Colors.grey.shade100,
+            ),
+          ),
+          const SizedBox(height: 12),
+
           SizedBox(
             width: double.infinity,
             child: FilledButton.icon(
               icon: const Icon(Icons.auto_awesome),
-              label: Text(_loading ? 'Generating…' : 'Generate'),
+              label: Text(_loading
+                  ? (_isVideoType ? 'Starting video…' : 'Generating…')
+                  : (_isVideoType ? 'Generate (video)' : 'Generate (image)')),
               onPressed: _loading ? null : _generateAll,
             ),
           ),
@@ -321,22 +361,25 @@ final previewUrl = status.url;
                     _hashtags.map((h) => Chip(label: Text('#$h'))).toList()),
             const SizedBox(height: 12),
 
-            const Text('Preview',
-                style: TextStyle(fontWeight: FontWeight.w600)),
-            const SizedBox(height: 8),
-            if (_imageUrl != null && _imageUrl!.startsWith('http'))
-              ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: Image.network(
-                  _imageUrl!,
-                  width: 260,
-                  height: 260,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => _imgFallback(),
-                ),
-              )
-            else
-              _imgFallback(),
+            // Image preview only for image flow
+            if (!_isVideoType) ...[
+              const Text('Preview',
+                  style: TextStyle(fontWeight: FontWeight.w600)),
+              const SizedBox(height: 8),
+              if (_imageUrl != null && _imageUrl!.startsWith('http'))
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Image.network(
+                    _imageUrl!,
+                    width: 260,
+                    height: 260,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => _imgFallback(),
+                  ),
+                )
+              else
+                _imgFallback(),
+            ],
 
             const SizedBox(height: 16),
             Wrap(spacing: 12, runSpacing: 12, children: [
@@ -357,6 +400,32 @@ final previewUrl = status.url;
                   icon: const Icon(Icons.share),
                   label: const Text('Share now')),
             ]),
+          ],
+
+          // VIDEO SECTION (auto-starts after pressing the top Generate)
+          if (_isVideoType) ...[
+            const SizedBox(height: 24),
+            Divider(color: Colors.grey.shade300, height: 1),
+            const SizedBox(height: 16),
+            Text('Video Generation',
+                style: Theme.of(context)
+                    .textTheme
+                    .titleLarge
+                    ?.copyWith(fontWeight: FontWeight.w700)),
+            const SizedBox(height: 8),
+
+            VideoGenerationSection(
+              key: _videoKey,
+              initialIdea: _ideaCtrl.text,
+              initialPlatform: _platform,
+              initialCta: _ctaCtrl.text,
+              brandPreset: _brand(),
+              onVideoReady: (url, taskId) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Video ready (task $taskId)')),
+                );
+              },
+            ),
           ],
 
           const SizedBox(height: 32),

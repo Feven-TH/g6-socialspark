@@ -1,12 +1,11 @@
-// lib/config/api_config.dart
 import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart' show kIsWeb;
 
 class ApiConfig {
   static String get baseUrl {
-    // If you're running Android emulator, use the host loopback: 10.0.2.2
+    // Android emulator must use 10.0.2.2 for host loopback
     if (!kIsWeb && Platform.isAndroid) return "http://10.0.2.2:8000";
-    // iOS simulator & desktop & web can use localhost
+    // iOS simulator, desktop, web → localhost
     return "http://localhost:8000";
   }
 
