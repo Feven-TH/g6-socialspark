@@ -66,7 +66,7 @@ export const socialSparkApi = createApi({
           style?: string;
           aspect_ratio?: string;
           platform?: string;
-          metadata?: any;
+          metadata?: string;
         };
       },
       string

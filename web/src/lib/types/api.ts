@@ -101,7 +101,12 @@ export interface ScheduleResponse {
   postID: string;
 }
 
-export interface ApiError {
-  error: string;
-  message: string;
+interface ApiErrorDetail {
+  loc?: (string | number)[];
+  msg: string;
+  type: string;
+}
+
+interface ApiErrorResponse {
+  detail: string | ApiErrorDetail[];
 }

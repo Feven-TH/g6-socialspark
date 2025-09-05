@@ -69,7 +69,7 @@ export const contentStorage = {
         }
       }
 
-      // Check library (which stores multiple items)
+    
       const library = contentStorage.getLibrary();
       const libraryItem = library.find((item) => item.id === id);
       if (libraryItem) {

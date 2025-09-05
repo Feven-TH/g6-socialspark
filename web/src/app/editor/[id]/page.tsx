@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Image from "next/image";
 
@@ -10,6 +10,8 @@ import { Input } from "@/components/input";
 import { Label } from "@/components/label";
 import { Badge } from "@/components/badge";
 import { Slider } from "@/components/slider";
+import * as htmlToImage from "html-to-image"; 
+
 import {
   Select,
   SelectContent,
@@ -81,6 +83,7 @@ function getContrastColor(hex: string) {
 export default function EditorPage() {
 
   const { id } = useParams();
+   const previewRef = useRef<HTMLDivElement>(null);
 
   const [caption, setCaption] = useState("");
   const [hashtags, setHashtags] = useState<string[]>([]);
@@ -193,6 +196,26 @@ export default function EditorPage() {
     }
   };
 
+  const handleDownload = async () => {
+    if (!previewRef.current) return;
+
+    try {
+      const dataUrl = await htmlToImage.toPng(previewRef.current, {
+        cacheBust: true,
+        quality: 1,
+      });
+
+      const link = document.createElement("a");
+      link.download = `snap-${id || "export"}.png`;
+      link.href = dataUrl;
+      link.click();
+    } catch (err) {
+      console.error("Export failed", err);
+      alert("Failed to export image, please try again.");
+    }
+  };
+
+
   return (
     <div className="min-h-screen bg-gray-50">
       <main className="max-w-6xl mx-auto bg-white">
@@ -246,6 +269,7 @@ export default function EditorPage() {
               </CardHeader>
               <CardContent>
                 <div
+                  ref={previewRef}
                   className="origin-top mx-auto aspect-square rounded-lg overflow-hidden relative"
                   style={{
                     backgroundColor: backgroundColor
@@ -549,7 +573,7 @@ export default function EditorPage() {
                     <SelectItem value="tiktok">Tiktok post</SelectItem>
                   </SelectContent>
                 </Select>
-                <Button className="w-full bg-black text-white hover:bg-gray-800">
+                <Button className="w-full bg-black text-white hover:bg-gray-800" onClick={handleDownload}> 
                   <Download className="w-4 h-4 mr-2" />
                   Download
                 </Button>
