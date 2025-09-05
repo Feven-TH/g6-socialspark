@@ -6,8 +6,21 @@ services:
       - .:/app
     ports:
       - "8000"
-    env_file:
-      - .env
+    environment:
+      - CELERY_BROKER_URI=${CELERY_BROKER_URI}
+      - CELERY_BACKEND_URI=${CELERY_BACKEND_URI}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - GOOGLE_LLM_MODEL=${GOOGLE_LLM_MODEL}
+      - MINIO_ENDPOINT=${MINIO_ENDPOINT}
+      - MINIO_ACCESS_KEY_ID=${MINIO_ACCESS_KEY_ID}
+      - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY}
+      - PIXABAY_API_KEY=${PIXABAY_API_KEY}
+      - PIXABAY_VIDEO_URL=${PIXABAY_VIDEO_URL}
+      - STABLE_HORDE_API_KEY=${STABLE_HORDE_API_KEY}
+      - FREESOUND_API_KEY=${FREESOUND_API_KEY}
+      - FREESOUND_SEARCH_URL=${FREESOUND_SEARCH_URL}
+      - FREESOUND_SOUND_URL=${FREESOUND_SOUND_URL}
+      - AYRSHARE_API_KEY=${AYRSHARE_API_KEY}
     depends_on:
       - redis
       - minio
@@ -34,8 +47,21 @@ services:
     command: celery -A infrastructure.celery_app worker --loglevel=info --concurrency=1
     volumes:
       - .:/app
-    env_file:
-      - .env
+    environment:
+      - CELERY_BROKER_URI=${CELERY_BROKER_URI}
+      - CELERY_BACKEND_URI=${CELERY_BACKEND_URI}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - GOOGLE_LLM_MODEL=${GOOGLE_LLM_MODEL}
+      - MINIO_ENDPOINT=${MINIO_ENDPOINT}
+      - MINIO_ACCESS_KEY_ID=${MINIO_ACCESS_KEY_ID}
+      - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY}
+      - PIXABAY_API_KEY=${PIXABAY_API_KEY}
+      - PIXABAY_VIDEO_URL=${PIXABAY_VIDEO_URL}
+      - STABLE_HORDE_API_KEY=${STABLE_HORDE_API_KEY}
+      - FREESOUND_API_KEY=${FREESOUND_API_KEY}
+      - FREESOUND_SEARCH_URL=${FREESOUND_SEARCH_URL}
+      - FREESOUND_SOUND_URL=${FREESOUND_SOUND_URL}
+      - AYRSHARE_API_KEY=${AYRSHARE_API_KEY}
     depends_on:
       - redis
 
@@ -44,8 +70,21 @@ services:
     command: celery -A infrastructure.celery_app beat --loglevel=info
     volumes:
       - .:/app
-    env_file:
-      - .env
+    environment:
+      - CELERY_BROKER_URI=${CELERY_BROKER_URI}
+      - CELERY_BACKEND_URI=${CELERY_BACKEND_URI}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - GOOGLE_LLM_MODEL=${GOOGLE_LLM_MODEL}
+      - MINIO_ENDPOINT=${MINIO_ENDPOINT}
+      - MINIO_ACCESS_KEY_ID=${MINIO_ACCESS_KEY_ID}
+      - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY}
+      - PIXABAY_API_KEY=${PIXABAY_API_KEY}
+      - PIXABAY_VIDEO_URL=${PIXABAY_VIDEO_URL}
+      - STABLE_HORDE_API_KEY=${STABLE_HORDE_API_KEY}
+      - FREESOUND_API_KEY=${FREESOUND_API_KEY}
+      - FREESOUND_SEARCH_URL=${FREESOUND_SEARCH_URL}
+      - FREESOUND_SOUND_URL=${FREESOUND_SOUND_URL}
+      - AYRSHARE_API_KEY=${AYRSHARE_API_KEY}
     depends_on:
       - redis
 

@@ -238,9 +238,11 @@ def render_video(self, payload):
         response = requests.get(
             url, params={"key": os.getenv("PIXABAY_API_KEY"), "q": shot["text"]}
         )
-        video_url = response.json()["hits"][0]["videos"]["tiny"]["url"]
-        clips.append(video_url)
-        durations.append(shot["duration"])
+        hits = response.json()["hits"]
+        if len(hits) > 0:
+            video_url = response.json()["hits"][0]["videos"]["tiny"]["url"]
+            clips.append(video_url)
+            durations.append(shot["duration"])
     return serve_video(clips, durations, payload["music"])
 
 
