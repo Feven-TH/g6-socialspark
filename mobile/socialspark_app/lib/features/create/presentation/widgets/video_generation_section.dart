@@ -36,6 +36,9 @@ class VideoGenerationSectionState extends State<VideoGenerationSection> {
   final _ideaCtrl = TextEditingController();
   final _ctaCtrl = TextEditingController();
 
+  // Dev helpers
+  final _pasteJsonCtrl = TextEditingController();
+
   final _platforms = const ['instagram', 'tiktok'];
 
   String _platform = 'instagram';
@@ -44,28 +47,43 @@ class VideoGenerationSectionState extends State<VideoGenerationSection> {
 
   String? _videoUrl;
   String? _taskId;
+  String? _lastPolledStatus; // QUEUED | READY | FAILED | SUCCESS etc.
+
+  // UI toggles
+  bool _noMusic = false; // frontend-only hint
 
   @override
   void initState() {
     super.initState();
     _ds = CreateRemoteDataSource(ApiClient());
     _platform = widget.initialPlatform;
-    _ideaCtrl.text = widget.initialIdea?.trim().isNotEmpty == true
+    _ideaCtrl.text = (widget.initialIdea?.trim().isNotEmpty ?? false)
         ? widget.initialIdea!.trim()
         : '15s TikTok for wildlife conservation ad';
     _ctaCtrl.text = widget.initialCta;
+
+    // Pre-fill the dev JSON with a known-good sample storyboard
+    _pasteJsonCtrl.text = const JsonEncoder.withIndent('  ').convert({
+      "shots": [
+        {"duration": 4, "text": "Playful monkey"},
+        {"duration": 3, "text": "Cute panda"},
+        {"duration": 4, "text": "Majestic lion"},
+        {"duration": 3, "text": "Colorful parrot"},
+        {"duration": 5, "text": "Wildlife logo call to action"}
+      ],
+      "music": "upbeat"
+    });
   }
 
   @override
   void didUpdateWidget(covariant VideoGenerationSection oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // Keep fields in sync if parent changes them
     if (widget.initialIdea != oldWidget.initialIdea &&
         (widget.initialIdea ?? '').trim().isNotEmpty) {
       _ideaCtrl.text = widget.initialIdea!.trim();
     }
     if (widget.initialCta != oldWidget.initialCta &&
-        (widget.initialCta).trim().isNotEmpty) {
+        widget.initialCta.trim().isNotEmpty) {
       _ctaCtrl.text = widget.initialCta.trim();
     }
     if (widget.initialPlatform != oldWidget.initialPlatform &&
@@ -78,6 +96,7 @@ class VideoGenerationSectionState extends State<VideoGenerationSection> {
   void dispose() {
     _ideaCtrl.dispose();
     _ctaCtrl.dispose();
+    _pasteJsonCtrl.dispose();
     super.dispose();
   }
 
@@ -93,7 +112,15 @@ class VideoGenerationSectionState extends State<VideoGenerationSection> {
 
   Map<String, dynamic> _brandApi() => _brand().toApiJson();
 
-  /// Public: allows parent to trigger the whole flow.
+  /// Parent can update inputs before starting (e.g., pass caption as idea).
+  void setInputs({String? idea, String? cta, String? platform}) {
+    if (idea != null) _ideaCtrl.text = idea;
+    if (cta != null) _ctaCtrl.text = cta;
+    if (platform != null && platform.isNotEmpty) _platform = platform;
+    if (mounted) setState(() {});
+  }
+
+  /// Public: trigger the whole flow (storyboard → render → poll).
   Future<void> start() => _start();
 
   // ----------------------------- FLOW --------------------------------
@@ -106,6 +133,7 @@ class VideoGenerationSectionState extends State<VideoGenerationSection> {
       _error = null;
       _videoUrl = null;
       _taskId = null;
+      _lastPolledStatus = null;
     });
 
     final idea = _ideaCtrl.text.trim().isEmpty
@@ -114,8 +142,8 @@ class VideoGenerationSectionState extends State<VideoGenerationSection> {
     final cta = _ctaCtrl.text.trim().isEmpty ? 'call and reserve' : _ctaCtrl.text.trim();
 
     try {
-      // 1) /generate/storyboard
-      final Map<String, dynamic> storyboardBody = {
+      // 1) Generate storyboard from idea (caption text can be used as idea)
+      final Map<String, dynamic> sbBody = {
         "idea": idea,
         "language": "english",
         "number_of_shots": 5,
@@ -123,35 +151,44 @@ class VideoGenerationSectionState extends State<VideoGenerationSection> {
         "cta": cta,
         "brand_presets": _brandApi(),
       };
-      debugPrint("POST /generate/storyboard -> ${jsonEncode(storyboardBody)}");
+      debugPrint("POST /generate/storyboard -> ${jsonEncode(sbBody)}");
 
-      final rawStoryboard = await _ds.startStoryboard(storyboardBody);
+      final rawStoryboard = await _ds.startStoryboard(sbBody);
 
-      // 2) Ensure it's a Map<String, dynamic> and sanitize
-      final Map<String, dynamic> storyboard = _ensureStoryboardMap(rawStoryboard);
+      // 2) Pass storyboard AS-IS into /render/video
+      final storyboard = _toStoryboardMap(rawStoryboard);
+      await _renderStoryboard(storyboard);
+    } catch (e) {
+      setState(() {
+        _loading = false;
+        _error = _extractError(e);
+      });
+    }
+  }
 
-      final List<Map<String, dynamic>> shots = (storyboard['shots'] as List)
-          .map<Map<String, dynamic>>(
-            (s) => _sanitizeShot(Map<String, dynamic>.from(s as Map)),
-          )
-          .toList();
+  /// Render WITH a known-good storyboard (shots+music) and poll until READY.
+  Future<void> _renderStoryboard(Map<String, dynamic> storyboard) async {
+    try {
+      // Optional frontend-only hint: if "No music" is toggled, overwrite music field.
+      if (_noMusic) {
+        // This only changes the payload we send; backend must decide how to handle it.
+        storyboard = Map<String, dynamic>.from(storyboard);
+        storyboard['music'] = 'none';
+      }
 
-      final Map<String, dynamic> renderBody = <String, dynamic>{
-        'shots': shots,
-        'music': (storyboard['music'] ?? 'upbeat').toString(),
-      };
+      debugPrint('POST /render/video -> ${jsonEncode(storyboard)}');
 
-      debugPrint('POST /render/video -> ${jsonEncode(renderBody)}');
-
-      // 3) /render/video
-      final renderResp = await _ds.startVideoRender(renderBody);
+      final renderResp = await _ds.startVideoRender(storyboard);
       final taskId = _extractTaskId(renderResp);
       _taskId = taskId;
 
-      // 4) Poll /tasks/{id}
       final status = await _pollTaskUntilDone(
         taskId,
         fetch: _ds.getTaskStatus,
+        onTick: (s) {
+          if (!mounted) return;
+          setState(() => _lastPolledStatus = s.status);
+        },
         timeout: const Duration(minutes: 10),
         interval: const Duration(seconds: 2),
       );
@@ -162,9 +199,7 @@ class VideoGenerationSectionState extends State<VideoGenerationSection> {
           _videoUrl = status.url;
           _loading = false;
         });
-        if (widget.onVideoReady != null) {
-          widget.onVideoReady!(status.url!, taskId);
-        }
+        widget.onVideoReady?.call(status.url!, taskId);
       } else if (s == 'FAILED') {
         throw Exception(status.error ?? 'Video task failed.');
       } else {
@@ -180,103 +215,20 @@ class VideoGenerationSectionState extends State<VideoGenerationSection> {
 
   // ----------------------------- HELPERS -----------------------------
 
-  Map<String, dynamic> _ensureStoryboardMap(dynamic raw) {
-    if (raw is Map<String, dynamic>) return _sanitizeStoryboard(raw);
-    if (raw is Map) return _sanitizeStoryboard(Map<String, dynamic>.from(raw));
+  /// Accept Map or JSON string. Do NOT reshape; send as-is to /render/video.
+  Map<String, dynamic> _toStoryboardMap(dynamic raw) {
+    if (raw is Map<String, dynamic>) return raw;
+    if (raw is Map) return Map<String, dynamic>.from(raw);
     if (raw is String) {
-      // Try strict JSON first
-      try {
-        final decoded = jsonDecode(raw);
-        if (decoded is Map<String, dynamic>) return _sanitizeStoryboard(decoded);
-        if (decoded is Map) {
-          return _sanitizeStoryboard(Map<String, dynamic>.from(decoded));
-        }
-      } catch (_) {
-        // fallthrough to loose parsing
-      }
-      final loose = _parseLooseStoryboardString(raw);
-      return _sanitizeStoryboard(loose);
+      final decoded = jsonDecode(raw);
+      if (decoded is Map<String, dynamic>) return decoded;
+      if (decoded is Map) return Map<String, dynamic>.from(decoded);
     }
-    throw Exception('Unsupported storyboard type: ${raw.runtimeType}');
-  }
-
-  Map<String, dynamic> _sanitizeStoryboard(Map<String, dynamic> m) {
-    final List<Map<String, dynamic>> shots = ((m['shots'] ?? const []) as List)
-        .map<Map<String, dynamic>>(
-          (s) => _sanitizeShot(Map<String, dynamic>.from(s as Map)),
-        )
-        .toList();
-
-    final String music = (m['music'] ?? 'upbeat').toString();
-    return <String, dynamic>{'shots': shots, 'music': music};
-  }
-
-  Map<String, dynamic> _sanitizeShot(Map<String, dynamic> mm) {
-    final durNum = mm['duration'];
-    int duration;
-    if (durNum is num) {
-      duration = durNum.round();
-    } else {
-      duration = int.tryParse('${mm['duration']}') ?? 4;
-    }
-    final text = (mm['text'] ?? mm['caption'] ?? mm['title'] ?? '').toString();
-    return <String, dynamic>{'duration': duration, 'text': text};
-  }
-
-  /// Lenient parser for pseudo-JSON like: {shots:[{duration:3,text:...},...], music:upbeat}
-  Map<String, dynamic> _parseLooseStoryboardString(String s) {
-    final List<Map<String, dynamic>> shots = <Map<String, dynamic>>[];
-
-    // Normalize curly quotes
-    final String txt = s
-        .replaceAll('\u2018', "'")
-        .replaceAll('\u2019', "'")
-        .replaceAll('\u201c', '"')
-        .replaceAll('\u201d', '"');
-
-    // Blocks like {duration: 3, text: Playful monkey}
-    final RegExp blockRe = RegExp(r'\{[^{}]*\}');
-    final RegExp durationRe =
-        RegExp(r'(?:duration|duration_sec|len)\s*[:=-]\s*([0-9]+(?:\.[0-9]+)?)', caseSensitive: false);
-    final RegExp textRe =
-        RegExp(r'(?:text|caption|title)\s*[:=-]\s*([^,}\n]+)', caseSensitive: false);
-
-    for (final m in blockRe.allMatches(txt)) {
-      final block = m.group(0)!;
-      final d = durationRe.firstMatch(block);
-      final t = textRe.firstMatch(block);
-
-      final dur = d != null ? double.tryParse(d.group(1)!) ?? 4.0 : 4.0;
-      var text = t != null ? t.group(1)!.trim() : '';
-
-      // strip surrounding quotes
-      text = text.replaceAll(RegExp(r'''^["']|["']$'''), '').trim();
-
-      if (text.isNotEmpty) {
-        shots.add(<String, dynamic>{
-          'duration': dur.round(), // ensure INT duration
-          'text': text,
-        });
-      }
-    }
-
-    // music
-    var music = 'upbeat';
-    final RegExp musicRe =
-        RegExp(r'music\s*[:=-]\s*("?)([A-Za-z0-9 _\-]+)\1', caseSensitive: false);
-    final mm = musicRe.firstMatch(txt);
-    if (mm != null) music = mm.group(2)!.trim();
-
-    if (shots.isEmpty) {
-      throw const FormatException('Could not parse storyboard shots');
-    }
-    return <String, dynamic>{'shots': shots, 'music': music};
+    throw const FormatException('Storyboard must be an object with "shots" and "music".');
   }
 
   String _extractTaskId(dynamic renderResponse) {
-    if (renderResponse == null) {
-      throw Exception('Empty /render/video response');
-    }
+    if (renderResponse == null) throw Exception('Empty /render/video response');
 
     if (renderResponse is Map) {
       final m = Map<String, dynamic>.from(renderResponse);
@@ -302,9 +254,11 @@ class VideoGenerationSectionState extends State<VideoGenerationSection> {
     required Future<TaskStatus> Function(String id) fetch,
     Duration timeout = const Duration(minutes: 10),
     Duration interval = const Duration(seconds: 2),
+    void Function(TaskStatus s)? onTick,
   }) async {
     final deadline = DateTime.now().add(timeout);
     TaskStatus status = await fetch(taskId);
+    onTick?.call(status);
 
     while (mounted) {
       final s = status.status.trim().toUpperCase();
@@ -314,6 +268,7 @@ class VideoGenerationSectionState extends State<VideoGenerationSection> {
       }
       await Future.delayed(interval);
       status = await fetch(taskId);
+      onTick?.call(status);
     }
     return status;
   }
@@ -321,7 +276,12 @@ class VideoGenerationSectionState extends State<VideoGenerationSection> {
   String _extractError(Object e) {
     if (e is DioException) {
       final data = e.response?.data;
+      // Prefer explicit backend error messages if present
       if (data is Map && data['detail'] != null) return data['detail'].toString();
+      if (data is String && data.trim().isNotEmpty) {
+        // Show first part of HTML/text error responses too
+        return data.length > 400 ? '${data.substring(0, 400)}…' : data;
+      }
       return e.message ?? e.toString();
     }
     return e.toString();
@@ -343,6 +303,23 @@ class VideoGenerationSectionState extends State<VideoGenerationSection> {
 
   @override
   Widget build(BuildContext context) {
+    final statusChip = (_lastPolledStatus == null)
+        ? const SizedBox.shrink()
+        : Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Chip(
+              label: Text(
+                'Task status: ${_lastPolledStatus!.toUpperCase()}',
+                style: const TextStyle(color: Colors.white),
+              ),
+              backgroundColor: _lastPolledStatus!.toUpperCase() == 'READY'
+                  ? Colors.green
+                  : (_lastPolledStatus!.toUpperCase() == 'FAILED'
+                      ? Colors.red
+                      : Colors.blueGrey),
+            ),
+          );
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -356,8 +333,8 @@ class VideoGenerationSectionState extends State<VideoGenerationSection> {
           controller: _ideaCtrl,
           maxLines: 2,
           decoration: InputDecoration(
-            labelText: 'Idea',
-            hintText: 'e.g., 15s TikTok for wildlife conservation ad',
+            labelText: 'Idea (caption text is used)',
+            hintText: 'Paste/auto-filled caption here',
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
           ),
         ),
@@ -388,6 +365,19 @@ class VideoGenerationSectionState extends State<VideoGenerationSection> {
             ),
           ],
         ),
+
+        // Frontend-only hint to try "no music" (backend must handle 'none' gracefully)
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Switch(
+              value: _noMusic,
+              onChanged: (v) => setState(() => _noMusic = v),
+            ),
+            const Text('Render without background music (frontend hint)'),
+          ],
+        ),
+
         const SizedBox(height: 12),
         SizedBox(
           width: double.infinity,
@@ -397,6 +387,47 @@ class VideoGenerationSectionState extends State<VideoGenerationSection> {
             onPressed: _loading ? null : _start,
           ),
         ),
+        statusChip,
+
+        // ---- Dev / debugging: paste a storyboard and render it directly ----
+        const SizedBox(height: 16),
+        ExpansionTile(
+          title: const Text('Advanced: paste storyboard JSON and render'),
+          childrenPadding: const EdgeInsets.all(8),
+          children: [
+            TextField(
+              controller: _pasteJsonCtrl,
+              maxLines: 8,
+              decoration: InputDecoration(
+                hintText: '{"shots":[{"duration":4,"text":"..."}],"music":"upbeat"}',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Align(
+              alignment: Alignment.centerRight,
+              child: OutlinedButton.icon(
+                onPressed: _loading
+                    ? null
+                    : () {
+                        try {
+                          final parsed = jsonDecode(_pasteJsonCtrl.text);
+                          final story = _toStoryboardMap(parsed);
+                          _renderStoryboard(story);
+                        } catch (e) {
+                          setState(() {
+                            _error = 'Invalid JSON: $e';
+                          });
+                        }
+                      },
+                icon: const Icon(Icons.play_arrow),
+                label: const Text('Render pasted storyboard'),
+              ),
+            ),
+          ],
+        ),
+        // -------------------------------------------------------------------
+
         if (_error != null) ...[
           const SizedBox(height: 12),
           Text(_error!, style: const TextStyle(color: Colors.red)),
@@ -417,7 +448,7 @@ class VideoGenerationSectionState extends State<VideoGenerationSection> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Render status'),
+                const Text('Render result'),
                 const SizedBox(height: 8),
                 if (_videoUrl != null)
                   FilledButton.icon(
