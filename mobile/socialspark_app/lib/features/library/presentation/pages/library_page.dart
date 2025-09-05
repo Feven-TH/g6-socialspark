@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:socialspark_app/core/widgets/main_scaffold.dart';
 import 'package:socialspark_app/features/scheduling/presentation/pages/scheduler_page.dart';
 import 'package:socialspark_app/features/library/data/library_data_service.dart';
@@ -211,7 +210,7 @@ class _ContentCard extends StatefulWidget {
   final VoidCallback onSchedule;
 
   const _ContentCard({
-    Key? key,
+    super.key,
     required this.status,
     required this.image,
     required this.title,
@@ -222,7 +221,7 @@ class _ContentCard extends StatefulWidget {
     required this.type,
     required this.onDelete,
     required this.onSchedule,
-  }) : super(key: key);
+  });
 
   @override
   State<_ContentCard> createState() => _ContentCardState();

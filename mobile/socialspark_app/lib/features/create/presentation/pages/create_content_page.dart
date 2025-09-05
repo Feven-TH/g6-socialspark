@@ -26,7 +26,7 @@ class _CreateContentPageState extends State<CreateContentPage> {
   String _platform = 'instagram';
   String _ctype = 'image post';
   String _tone = 'Playful';
-  List<String> _hashtags = ['AddisAbebaCafe', 'EthiopianCoffee'];
+  final List<String> _hashtags = ['AddisAbebaCafe', 'EthiopianCoffee'];
   String? _imageUrl;
   String? _error;
   bool _loading = false;
