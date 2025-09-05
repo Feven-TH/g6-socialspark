@@ -4,5 +4,19 @@
   "service": "web",
   "workspaceFolder": "/workspaces/app",
   "shutdownAction": "stopCompose",
-  "forwardPorts": [8000, 9000, 9001]
+  "forwardPorts": [8000, 9000, 9001],
+  "remoteEnv": {
+    "MINIO_ACCESS_KEY": "${localEnv:MINIO_ACCESS_KEY}",
+    "MINIO_ACCESS_KEY_ID": "${localEnv:MINIO_ACCESS_KEY_ID}",
+    "CELERY_BROKER_URI": "${localEnv:CELERY_BROKER_URI}",
+    "CELERY_BACKEND_URI": "${localEnv:CELERY_BACKEND_URI}",
+    "GOOGLE_API_KEY": "${localEnv:GOOGLE_API_KEY}",
+    "GOOGLE_LLM_MODEL": "${localEnv:GOOGLE_LLM_MODEL}",
+    "MINIO_ENDPOINT": "${localEnv:MINIO_ENDPOINT}",
+    "PIXABAY_API_KEY": "${localEnv:PIXABAY_API_KEY}",
+    "PIXABAY_VIDEO_URL": "${localEnv:PIXABAY_VIDEO_URL}",
+    "FREESOUND_API_KEY": "${localEnv:FREESOUND_API_KEY}",
+    "FREESOUND_SEARCH_URL": "${localEnv:FREESOUND_SEARCH_URL}",
+    "FREESOUND_SOUND_URL": "${localEnv:FREESOUND_SOUND_URL}"
+  }
 }
