@@ -8,19 +8,17 @@ import { Label } from "@/components/label";
 import Toast from "@/components/Toast";
 import { useSchedulePostMutation } from "@/lib/redux/services/api";
 import type { ToastState, LibraryItem } from "@/types/library";
-import { libraryService } from "@/services/libraryService";
-import Image from "next/image";
+import libraryService from "@/services/libraryService";
 
 const PLATFORMS = ["instagram", "pinterest"] as const;
 
 export default function PostSchedulePage() {
-  const params = useParams() as { id: string | undefined };
+  const params = useParams();
   const router = useRouter();
 
-  const [assetId, setAssetId] = useState<string>("");
-  const [platforms, setPlatforms] = useState<string[]>(["instagram"]);
   const [postText, setPostText] = useState<string>("");
   const [runAt, setRunAt] = useState<string>("");
+  const [platforms, setPlatforms] = useState<string[]>(["instagram"]);
   const [item, setItem] = useState<LibraryItem | null>(null);
 
   const [toast, setToast] = useState<ToastState>({
@@ -37,40 +35,25 @@ export default function PostSchedulePage() {
     );
   };
 
+  // Load library item
   useEffect(() => {
-    const loadItem = async () => {
-      const id = String(params?.id || "");
-      if (!id) return;
+    const load = async () => {
+      const id = Array.isArray(params?.id) ? params.id[0] : params?.id;
 
+      if (!id) return;
       try {
         const fetched = await libraryService.getLibraryItem(id);
         if (fetched) {
           setItem(fetched);
-          console.log("fetched", fetched.imageUrl);
-
-          // Handle hashtags array or string
-          const hashtags = fetched.hashtags.join(" ");
-
-          setPostText(fetched.caption + (hashtags ? " " + hashtags : ""));
-
-          const url = fetched.imageUrl || fetched.videoUrl || "";
-          if (url) setAssetId(url);
-
-          const isPlatform = (p: string): p is (typeof PLATFORMS)[number] => {
-            return PLATFORMS.includes(p as (typeof PLATFORMS)[number]);
-          };
-
-          if (fetched.platform && isPlatform(fetched.platform)) {
-            setPlatforms([fetched.platform]);
-          }
+          if (!postText) setPostText(fetched.caption || "");
         }
-      } catch (error) {
-        console.error("Failed to fetch library item:", error);
+      } catch {
+        // ignore; form remains usable
       }
     };
-
-    loadItem();
-  }, [params]);
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [params?.id]);
 
   const [schedulePost, { isLoading }] = useSchedulePostMutation();
 
@@ -99,7 +82,7 @@ export default function PostSchedulePage() {
   };
 
   const validate = (): string | null => {
-    if (!assetId) return "Missing asset ID.";
+    if (!item?.imageUrl) return "Missing asset image URL.";
     if (!postText.trim()) return "Post text is required.";
     if (!platforms.length) return "Select at least one platform.";
     return null;
@@ -111,33 +94,54 @@ export default function PostSchedulePage() {
       showToast(error, "error");
       return;
     }
+
     if (!immediate && !runAt) {
       showToast("Please select a schedule time or use Post Now.", "error");
       return;
     }
 
     try {
-      const targetRunAt = immediate
-        ? undefined
-        : runAt
-        ? new Date(runAt).toISOString()
-        : undefined;
+      let targetRunAt: string | undefined = undefined;
 
-      await schedulePost({
-        asset_id: assetId,
-        platforms,
+      if (!immediate && runAt) {
+        const date = new Date(runAt);
+        if (isNaN(date.getTime())) {
+          showToast("Invalid schedule time.", "error");
+          return;
+        }
+        targetRunAt = date.toISOString();
+      }
+
+      const response = await schedulePost({
+        asset_id: item!.imageUrl, // use imageUrl as asset_id
+        platforms: platforms,
         post_text: postText.trim(),
-        run_at: targetRunAt, // backend decides status
+        run_at: targetRunAt,
       }).unwrap();
+
+      // Update status of the library item
+      if (item) {
+        await libraryService.updateLibraryItem(item.id, {
+          status: immediate ? "done" : "queued",
+        });
+
+        setItem((prev) =>
+          prev ? { ...prev, status: immediate ? "done" : "queued" } : prev
+        );
+      }
 
       showToast(
         immediate
           ? "Post published successfully!"
-          : "Post scheduled successfully!",
+          : `Post scheduled successfully for ${new Date(
+              targetRunAt!
+            ).toLocaleString()}`,
         "success"
       );
 
-      setTimeout(() => router.push("/library"), 1000);
+      console.log("Schedule response:", response);
+
+      setTimeout(() => router.push("/library"), 2000);
     } catch (e: unknown) {
       const apiMsg = getErrorMessage(e);
       showToast(apiMsg, "error");
@@ -160,15 +164,11 @@ export default function PostSchedulePage() {
             {item && (
               <div className="flex gap-4 p-4 border rounded-lg bg-muted/50">
                 <div className="w-20 h-20 rounded-lg overflow-hidden flex-shrink-0">
-                  <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 relative">
-                    <Image
-                      src={item.imageUrl || "/placeholder.svg"}
-                      alt={item.title}
-                      width={64}
-                      height={64}
-                      className="object-cover rounded-lg"
-                    />
-                  </div>
+                  <img
+                    src={item.imageUrl || "/placeholder.svg"}
+                    alt={item.title}
+                    className="w-full h-full object-cover"
+                  />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold mb-1 line-clamp-2">
@@ -184,31 +184,31 @@ export default function PostSchedulePage() {
             <div className="space-y-2">
               <Label>Platforms</Label>
               <div className="flex gap-2 flex-wrap">
-                {PLATFORMS.map((p) => {
-                  const selected = platforms.includes(p);
+                {PLATFORMS.map((platform) => {
+                  const selected = platforms.includes(platform);
                   return (
                     <button
-                      key={p}
+                      key={platform}
                       type="button"
                       onClick={() => {
                         if (selected) {
-                          setPlatforms(platforms.filter((plat) => plat !== p));
+                          setPlatforms(platforms.filter((p) => p !== platform));
                         } else {
-                          setPlatforms([...platforms, p]);
+                          setPlatforms([...platforms, platform]);
                         }
                       }}
-                      className={`px-4 py-1 rounded-full text-sm font-medium transition-colors ${
+                      className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
                         selected
-                          ? "bg-black text-white" // selected color
-                          : "bg-gray-200 text-gray-700 hover:bg-gray-300" // default color
+                          ? "bg-black text-white"
+                          : "bg-gray-200 text-gray-700 hover:bg-gray-300"
                       }`}
                     >
-                      {p.charAt(0).toUpperCase() + p.slice(1)}
+                      {platform.charAt(0).toUpperCase() + platform.slice(1)}
                     </button>
                   );
                 })}
               </div>
-              <p className="text-xs text-muted-foreground mt-1">
+              <p className="text-xs text-muted-foreground">
                 Click to select multiple platforms
               </p>
             </div>
