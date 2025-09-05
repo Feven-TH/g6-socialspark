@@ -2,7 +2,7 @@
   "name": "SocialSpark Backend",
   "dockerComposeFile": ["docker-compose-prod.yml"],
   "service": "web",
-  "workspaceFolder": "/workspaces/app",
+  "workspaceFolder": "/workspaces/g6-socialspark/backend",
   "shutdownAction": "stopCompose",
   "forwardPorts": [8000, 9000, 9001],
   "remoteEnv": {
