@@ -21,7 +21,7 @@ import io
 import tempfile
 import uuid
 from typing import Optional, Dict
-from PIL import Image, UnidentifiedImageError 
+from PIL import Image, UnidentifiedImageError
 from infrastructure.celery_app import celery_app
 from infrastructure.storage_service import upload_file, get_download_url
 from dotenv import load_dotenv
@@ -33,12 +33,15 @@ logger.setLevel(logging.INFO)
 if not logger.hasHandlers():
     ch = logging.StreamHandler()
     ch.setLevel(logging.INFO)
-    formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+    formatter = logging.Formatter(
+        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    )
     ch.setFormatter(formatter)
     logger.addHandler(ch)
 
 MAX_INSTAGRAM_WIDTH = 6000
 MAX_INSTAGRAM_HEIGHT = 6000
+
 
 @celery_app.task(bind=True, autoretry_for=(Exception,), retry_kwargs={"max_retries": 3})
 def publish_post(self, post_data: Dict):
@@ -50,7 +53,14 @@ def publish_post(self, post_data: Dict):
 
     asset_id = post_data["asset_id"]
     platforms = post_data["platforms"]
-    supported_platforms = {"instagram", "facebook", "pinterest", "twitter", "linkedin", "googlebusinessprofile"}
+    supported_platforms = {
+        "instagram",
+        "facebook",
+        "pinterest",
+        "twitter",
+        "linkedin",
+        "googlebusinessprofile",
+    }
 
     for p in platforms:
         if p not in supported_platforms:
@@ -82,7 +92,7 @@ def publish_post(self, post_data: Dict):
             "post": post_text,
             "platforms": platforms,
         }
-        
+
         if run_at:
             payload["scheduleDate"] = run_at.isoformat()
 
@@ -101,20 +111,38 @@ def publish_post(self, post_data: Dict):
             resized_img.save(resized_image_buffer, format=img.format)
             resized_image_buffer.seek(0)
 
-            files = {'media': (f"resized_{asset_id}.jpg", resized_image_buffer, f"image/{img.format.lower()}")}
-            response = requests.post("https://api.ayrshare.com/api/post", headers={"Authorization": f"Bearer {API_KEY}"}, data=payload, files=files)
+            files = {
+                "media": (
+                    f"resized_{asset_id}.jpg",
+                    resized_image_buffer,
+                    f"image/{img.format.lower()}",
+                )
+            }
+            response = requests.post(
+                "https://api.ayrshare.com/api/post",
+                headers={"Authorization": f"Bearer {API_KEY}"},
+                data=payload,
+                files=files,
+            )
         else:
             payload["mediaUrls"] = [media_url]
-            response = requests.post("https://api.ayrshare.com/api/post", headers={"Authorization": f"Bearer {API_KEY}", "Content-Type": "application/json"}, json=payload)
+            response = requests.post(
+                "https://api.ayrshare.com/api/post",
+                headers={
+                    "Authorization": f"Bearer {API_KEY}",
+                    "Content-Type": "application/json",
+                },
+                json=payload,
+            )
 
     except requests.exceptions.RequestException as e:
         logger.error(f"Error downloading or posting image: {e}")
         raise self.retry(exc=e)
-    
+
     except UnidentifiedImageError as e:
         logger.error(f"The asset '{asset_id}' is not a valid image file: {e}")
         return
-    
+
     except Exception as e:
         logger.error(f"An unexpected error occurred: {e}")
         raise self.retry(exc=e)
@@ -123,6 +151,7 @@ def publish_post(self, post_data: Dict):
     logger.info(f"Ayrshare response body: {response.text}")
     response.raise_for_status()
     logger.info(f"Post to {platforms} successful: {response.json()}")
+
 
 def prepare_music(music_desc: str):
     url = os.getenv("FREESOUND_SEARCH_URL")
@@ -212,7 +241,7 @@ def render_video(self, payload):
         video_url = response.json()["hits"][0]["videos"]["tiny"]["url"]
         clips.append(video_url)
         durations.append(shot["duration"])
-    return serve_video(clips, durations)
+    return serve_video(clips, durations, payload["music"])
 
 
 @celery_app.task(bind=True, time_limit=900, soft_time_limit=800)  # 15 min timeout
@@ -222,70 +251,80 @@ def render_image(self, image_data):
     """
     try:
         logger.info(f"Starting render_image task with data: {image_data}")
-        
+
         # Update task status
-        self.update_state(state='PROCESSING', meta={'progress': 10, 'message': 'Starting image generation'})
-        
-        prompt = image_data['prompt_used']
-        style = image_data['style']
-        aspect_ratio = image_data['aspect_ratio']
-        platform = image_data['platform']
-        
-        logger.info(f"Extracted parameters - Prompt: {prompt[:50]}..., Style: {style}, Aspect: {aspect_ratio}")
-        
+        self.update_state(
+            state="PROCESSING",
+            meta={"progress": 10, "message": "Starting image generation"},
+        )
+
+        prompt = image_data["prompt_used"]
+        style = image_data["style"]
+        aspect_ratio = image_data["aspect_ratio"]
+        platform = image_data["platform"]
+
+        logger.info(
+            f"Extracted parameters - Prompt: {prompt[:50]}..., Style: {style}, Aspect: {aspect_ratio}"
+        )
+
         # Initialize Stable Horde service
         logger.info("Initializing Stable Horde service")
         stable_horde = StableHordeService()
-        
+
         # Update progress
-        self.update_state(state='PROCESSING', meta={'progress': 20, 'message': 'Submitting to Stable Horde'})
-        
+        self.update_state(
+            state="PROCESSING",
+            meta={"progress": 20, "message": "Submitting to Stable Horde"},
+        )
+
         # Generate image using Stable Horde
         logger.info("Calling Stable Horde generate_image")
         result = stable_horde.generate_image(
-            prompt=prompt,
-            style=style,
-            aspect_ratio=aspect_ratio
+            prompt=prompt, style=style, aspect_ratio=aspect_ratio
         )
-        
+
         logger.info(f"Stable Horde returned result: {result}")
-        
+
         # Update progress
-        self.update_state(state='PROCESSING', meta={'progress': 90, 'message': 'Processing complete'})
-        
+        self.update_state(
+            state="PROCESSING", meta={"progress": 90, "message": "Processing complete"}
+        )
+
         final_result = {
-            'status': 'completed',
-            'image_url': result['image_url'],
-            'prompt_used': prompt,
-            'style': style,
-            'aspect_ratio': aspect_ratio,
-            'platform': platform,
-            'metadata': {
-                'seed': result.get('seed'),
-                'worker_id': result.get('worker_id'),
-                'worker_name': result.get('worker_name'),
-                'model': result.get('model')
-            }
+            "status": "completed",
+            "image_url": result["image_url"],
+            "prompt_used": prompt,
+            "style": style,
+            "aspect_ratio": aspect_ratio,
+            "platform": platform,
+            "metadata": {
+                "seed": result.get("seed"),
+                "worker_id": result.get("worker_id"),
+                "worker_name": result.get("worker_name"),
+                "model": result.get("model"),
+            },
         }
-        
+
         logger.info(f"Task completed successfully: {final_result}")
         return final_result
-        
+
     except Exception as e:
         logger.error(f"Error in render_image task: {str(e)}", exc_info=True)
         self.update_state(
-            state='FAILURE',
-            meta={'error': str(e), 'message': f'Image generation failed: {str(e)}'}
+            state="FAILURE",
+            meta={"error": str(e), "message": f"Image generation failed: {str(e)}"},
         )
         raise
-    return serve_video(clips, durations, payload["music"])
+
 
 @celery_app.task(name="usecases.tasks.send_reminder")
 def send_reminder(asset_id: str, platform: str):
     from repository import schedule_repository
     from datetime import datetime
 
-    print(f"[REMINDER] {datetime.utcnow().isoformat()} UTC - Asset {asset_id} scheduled for {platform}")
+    print(
+        f"[REMINDER] {datetime.utcnow().isoformat()} UTC - Asset {asset_id} scheduled for {platform}"
+    )
 
     schedule_repository.update_status(asset_id, "done")
 
