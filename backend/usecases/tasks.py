@@ -163,9 +163,11 @@ def prepare_music(music_desc: str):
             "fields": "previews",
         },
     )
-    print(response.json()["results"][0])
-    music_url = response.json()["results"][0]["previews"]["preview-lq-mp3"]
-    return music_url
+    results = response.json()["results"]
+    if len(results) > 0:
+        music_url = response.json()["results"][0]["previews"]["preview-lq-mp3"]
+        return music_url
+    return None
 
 
 def stitch_clips(
