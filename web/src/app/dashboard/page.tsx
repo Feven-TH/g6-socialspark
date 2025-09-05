@@ -154,6 +154,14 @@ export default function Dashboard() {
   }, [taskStatus]);
 
   useEffect(() => {
+    if (imageStatusError) {
+      console.error("Image status error:", imageStatusError);
+      setError("Failed to check image status");
+      setIsGenerating(false);
+    }
+  }, [imageStatusError]);
+
+  useEffect(() => {
     if (taskError) {
       console.error("Task status error:", taskError);
       setError("Failed to check video status");
@@ -183,14 +191,6 @@ export default function Dashboard() {
       }
     }
   }, [imageStatus]);
-
-  useEffect(() => {
-    if (imageStatusError) {
-      console.error("Image status error:", imageStatusError);
-      setError("Failed to check image status");
-      setIsGenerating(false);
-    }
-  }, [imageStatusError]);
 
   useEffect(() => {
     const error =
@@ -282,7 +282,7 @@ export default function Dashboard() {
       const captionResponse = await generateCaption({
         idea,
         platform,
-        language,
+        language: "amharic",
         hashtags_count: 6,
         brand_presets: {
           name: brand.businessName || "",
@@ -718,7 +718,7 @@ export default function Dashboard() {
                               {generatedContent.imageId ? (
                                 <div className="relative text-center space-y-4">
                                   {getImageStatusMessage() ===
-                                  "Image failed - try again" ? (
+                                    "Image failed - try again" || error ? (
                                     <>
                                       <div className="w-20 h-20 mx-auto bg-red-100 rounded-full flex items-center justify-center">
                                         <ImageIcon className="w-10 h-10 text-red-500" />

@@ -18,7 +18,7 @@ import type {
 
 export const socialSparkApi = createApi({
   reducerPath: "socialSparkApi",
-  baseQuery: fetchBaseQuery({ baseUrl: "http://localhost:8000" }),
+  baseQuery: fetchBaseQuery({ baseUrl: process.env.NEXT_PUBLIC_BASE_URL }),
   tagTypes: ["Draft", "Task"],
 
   endpoints: (builder) => ({
