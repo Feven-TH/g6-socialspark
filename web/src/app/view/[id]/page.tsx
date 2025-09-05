@@ -11,35 +11,59 @@ import {
 } from "../../../components/card";
 import { Textarea } from "../../../components/textarea";
 import { Badge } from "../../../components/badge";
+import { Button } from "../../../components/button";
+import Toast from "@/components/Toast";
 import { ImageIcon, Camera, Hash, Type, Play, ArrowLeft } from "lucide-react";
-
-type ContentItem = {
-  id: number;
-  title: string;
-  caption: string;
-  hashtags: string[];
-  imageUrl: string;
-  videoUrl?: string;
-  platform: string;
-  type: string;
-};
+import { ContentItem, ToastState } from "@/types/library";
+import libraryService from "@/services/libraryService";
 
 export default function Page() {
   const params = useParams();
-  const id = params?.id;
+  const id = Array.isArray(params?.id) ? params.id[0] : params?.id;
   const router = useRouter();
   const [content, setContent] = useState<ContentItem | null>(null);
+
+  const [toast, setToast] = useState<ToastState>({
+    show: false,
+    message: "",
+    type: "success",
+  });
 
   useEffect(() => {
     if (!id) return;
 
-    const stored = localStorage.getItem("libraryContent");
-    if (stored) {
-      const items: ContentItem[] = JSON.parse(stored);
-      const selected = items.find((item) => item.id.toString() === id);
-      if (selected) setContent(selected);
-    }
+    const loadContent = async () => {
+      try {
+        const item = await libraryService.getLibraryItem(id);
+        console.log("item", item);
+        if (item) {
+          setContent({
+            id: item.id,
+            title: item.title,
+            caption: item.caption,
+            hashtags: item.hashtags,
+            imageUrl: item.imageUrl,
+            videoUrl: item.videoUrl,
+            platform: item.platform,
+            type: item.type,
+          });
+        }
+      } catch (error) {
+        console.error("Failed to load content:", error);
+        showToast("Failed to load content", "error");
+      }
+    };
+
+    loadContent();
   }, [id]);
+
+  const showToast = (message: string, type: "success" | "error") => {
+    setToast({ show: true, message, type });
+    setTimeout(
+      () => setToast({ show: false, message: "", type: "success" }),
+      3000
+    );
+  };
 
   if (!content) {
     return (
@@ -60,10 +84,10 @@ export default function Page() {
         Back to Library
       </button>
 
-      <h1 className="text-2xl font-bold mb-6">{content.title}</h1>
-
       <Card>
         <CardHeader>
+          <h1 className="text-2xl font-bold">{content.title}</h1>
+
           <CardTitle className="flex items-center gap-2">
             <Camera className="w-5 h-5 text-secondary" />
             Generated Content
@@ -108,34 +132,33 @@ export default function Page() {
                 <label className="font-medium">Preview</label>
               </div>
               <div className="aspect-square bg-muted rounded-lg overflow-hidden flex items-center justify-center relative">
-                {content.type === "image" ? (
+                {content.imageUrl ? (
                   <Image
-                    src={content.imageUrl || "/placeholder.svg"}
+                    src={content.imageUrl}
                     alt={content.title}
                     fill
                     className="object-cover"
                   />
+                ) : content.videoUrl ? (
+                  <video
+                    src={content.videoUrl}
+                    controls
+                    className="w-full h-full object-cover"
+                  />
                 ) : (
-                  <>
-                    {content.videoUrl ? (
-                      <video
-                        src={content.videoUrl}
-                        controls
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="flex flex-col items-center justify-center text-muted-foreground">
-                        <Play className="w-12 h-12 mb-2" />
-                        <span>Video Preview</span>
-                      </div>
-                    )}
-                  </>
+                  <div className="flex flex-col items-center justify-center text-muted-foreground">
+                    <Play className="w-12 h-12 mb-2" />
+                    <span>No Preview Available</span>
+                  </div>
                 )}
               </div>
             </div>
           </div>
         </CardContent>
       </Card>
+
+      {/* Toast Notifications */}
+      <Toast toast={toast} />
     </div>
   );
 }

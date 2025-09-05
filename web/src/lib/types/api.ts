@@ -90,15 +90,15 @@ export interface ExportResponse {
 
 export interface ScheduleRequest {
   asset_id: string;
-  platform: string;
-  run_at: string;
+  platforms: string[];
+  eta?: string; // Optional for immediate posts
+  post_text: string;
 }
 
 export interface ScheduleResponse {
-  status: "queued" | "failed";
-  scheduled_for: string;
-  mode?: "api";
-  platform_post_id?: string;
+  status: string;
+  scheduled_at: string;
+  postID: string;
 }
 
 export interface ApiError {
