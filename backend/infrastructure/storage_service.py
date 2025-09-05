@@ -34,6 +34,6 @@ def get_download_url(object_name: str, bucket_name: str) -> str:
             Params={"Bucket": bucket_name, "Key": object_name},
             ExpiresIn=3600,
         )
-        return url.replace("minio", os.getenv("BACKEND_HOST_URL"))
+        return url.replace("http://minio:9000", os.getenv("BACKEND_HOST_URL"))
     except Exception as e:
         raise Exception(f"Failed to generate download URL: {e}")
