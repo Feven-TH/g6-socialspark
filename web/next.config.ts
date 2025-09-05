@@ -6,13 +6,19 @@ const nextConfig: NextConfig = {
     root: path.resolve(__dirname),
   },
   images: {
-    // Allow images from localhost:9000/videos
     remotePatterns: [
+      // Allow images from localhost:9000/videos
       {
         protocol: "http",
         hostname: "localhost",
         port: "9000",
         pathname: "/videos/**",
+      },
+      // Allow images from Cloudflare R2
+      {
+        protocol: "https",
+        hostname: "a223539ccf6caa2d76459c9727d276e6.r2.cloudflarestorage.com",
+        pathname: "/**",
       },
     ],
   },
