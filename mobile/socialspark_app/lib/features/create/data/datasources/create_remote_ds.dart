@@ -6,7 +6,8 @@ class CreateRemoteDataSource {
   final ApiClient _api;
   CreateRemoteDataSource(this._api);
 
-  // ---- Captions (expects `idea`) ----
+  // ---------------- CAPTIONS ----------------
+  // POST /generate/caption  (expects `idea`)
   Future<String> generateCaption(CaptionRequest req) async {
     final res = await _api.post("/generate/caption", req.toJson());
     if (res is String) return res;
@@ -14,16 +15,23 @@ class CreateRemoteDataSource {
     return res.toString();
   }
 
-  // ---- Images ----
-  /// Step 1: returns the PROMPT string the server generated
-  Future<String> startImageGeneration(ImageGenerationRequest req) async {
+  // ---------------- IMAGES ----------------
+  // STEP 1: POST /generate/image  -> returns a PROMPT string
+  Future<String> generateImagePrompt(ImageGenerationRequest req) async {
     final res = await _api.post("/generate/image", req.toJson());
-    // Spec says it returns a string → that is the prompt to use next
+    // Spec: response is a plain string (the finalized prompt).
     if (res is String) return res;
+    // If backend ever wraps it, fallback:
+    if (res is Map && res["prompt"] != null) return res["prompt"].toString();
     return res.toString();
   }
 
-  /// Step 2: send prompt_used + style/aspect/platform → returns TASK ID string
+  // (Back-compat alias if you already call startImageGeneration elsewhere)
+  @Deprecated('Use generateImagePrompt(...)')
+  Future<String> startImageGeneration(ImageGenerationRequest req) =>
+      generateImagePrompt(req);
+
+  // STEP 2: POST /render/image  -> returns a TASK ID string
   Future<String> startImageRender({
     required String promptUsed,
     required String style,
@@ -37,29 +45,38 @@ class CreateRemoteDataSource {
       "platform": platform,
     };
     final res = await _api.post("/render/image", body);
-    if (res is String) return res; // task id
+    if (res is String) return res; // task id (per spec)
     if (res is Map && (res["task_id"] != null || res["id"] != null)) {
       return (res["task_id"] ?? res["id"]).toString();
     }
     return res.toString();
   }
 
-  /// Step 3: poll status. API returns a string; interpret smartly.
+  // STEP 3: GET /status/{task_id}  -> may return a URL string or a status string/JSON
   Future<TaskStatus> getImageStatus(String taskId) async {
     final res = await _api.get("/status/$taskId");
+
+    // Most common: server returns a plain string
     if (res is String) {
       final s = res.trim();
-      if (s.startsWith("http")) {
-        return TaskStatus(id: taskId, status: "succeeded", url: s);
+      if (s.startsWith('http')) {
+        return TaskStatus(id: taskId, status: 'succeeded', url: s);
       }
-      // queued | running | failed | etc.
+      // queued | running | failed | succeeded
       return TaskStatus(id: taskId, status: s);
     }
-    if (res is Map<String, dynamic>) return TaskStatus.fromJson(res);
+
+    if (res is Map<String, dynamic>) {
+      // If your backend later returns {status: "...", url: "..."} etc.
+      return TaskStatus.fromJson(res);
+    }
+
+    // Fallback
     return TaskStatus(id: taskId, status: res.toString());
   }
 
-  // ---- Videos (unchanged) ----
+  // ---------------- VIDEOS (placeholder; keep if you already call them) ----------------
+  // POST /generate/storyboard
   Future<String> startStoryboard(Map<String, dynamic> body) async {
     final res = await _api.post("/generate/storyboard", body);
     if (res is String) return res;
@@ -69,6 +86,9 @@ class CreateRemoteDataSource {
     return res.toString();
   }
 
+  // POST /render/video
+  // Swagger shows it expects { shots: [{duration, text}], music }
+  // (You can adjust the body you pass in your UI to match that.)
   Future<String> startVideoRender(Map<String, dynamic> body) async {
     final res = await _api.post("/render/video", body);
     if (res is String) return res;
