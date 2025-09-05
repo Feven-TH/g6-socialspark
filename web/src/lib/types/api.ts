@@ -75,7 +75,7 @@ export interface ExportResponse {
 export interface ScheduleRequest {
   asset_id: string;
   platforms: string[];
-  run_at?: string; // Optional for immediate posts
+  eta?: string; // Optional for immediate posts
   post_text: string;
 }
 

@@ -116,7 +116,7 @@ export default function PostSchedulePage() {
         asset_id: item!.imageUrl, // use imageUrl as asset_id
         platforms: platforms,
         post_text: postText.trim(),
-        run_at: targetRunAt,
+        eta: targetRunAt,
       }).unwrap();
 
       // Update status of the library item
