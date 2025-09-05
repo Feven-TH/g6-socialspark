@@ -1,65 +1,5 @@
 import { LibraryItem, EditorContent, SchedulerContent } from "@/types/library";
 
-// Mock data for development
-const mockContent: LibraryItem[] = [
-  {
-    id: "1",
-    title: "Caramel Macadamia Latte",
-    type: "image",
-    contentType: "image",
-    platform: "instagram",
-    createdAt: "2024-01-15",
-    status: "published",
-    engagement: { likes: 45, comments: 8, views: 234 },
-    caption: "Try our new Caramel Macadamia Latte! Perfect coffee blend...",
-    hashtags: ["AddisAbebaCafe", "EthiopianCoffee", "Latte"],
-    videoUrl: "",
-    imageUrl: "/ethiopian-cafe-latte-with-caramel-and-macadamia-nu.png",
-  },
-  {
-    id: "2",
-    title: "Behind the Scenes",
-    type: "video",
-    contentType: "video",
-    platform: "tiktok",
-    createdAt: "2024-01-14",
-    status: "draft",
-    engagement: { likes: 0, comments: 0, views: 0 },
-    caption: "Watch how we make our signature latte...",
-    hashtags: ["BehindTheScenes", "CoffeeProcess", "Barista"],
-    videoUrl: "/short-video-of-latte-being-made.mp4",
-    imageUrl: "/short-video-of-latte-being-made.png",
-  },
-  {
-    id: "3",
-    title: "Weekend Special",
-    type: "image",
-    contentType: "image",
-    platform: "instagram",
-    createdAt: "2024-01-13",
-    status: "scheduled",
-    engagement: { likes: 0, comments: 0, views: 0 },
-    caption: "Weekend vibes with our special blend...",
-    hashtags: ["WeekendSpecial", "CoffeeLovers", "Relax"],
-    videoUrl: "",
-    imageUrl: "/weekend-coffee-special.png",
-  },
-  {
-    id: "4",
-    title: "Customer Review",
-    type: "image",
-    contentType: "image",
-    platform: "instagram",
-    createdAt: "2024-01-12",
-    status: "published",
-    engagement: { likes: 67, comments: 12, views: 345 },
-    caption: "Amazing feedback from our lovely customers...",
-    hashtags: ["CustomerLove", "Reviews", "HappyCustomers"],
-    videoUrl: "",
-    imageUrl: "/happy-customer-with-coffee.png",
-  },
-];
-
 class LibraryService {
   private storageKey = "libraryContent";
 
@@ -70,9 +10,7 @@ class LibraryService {
       if (stored) {
         return JSON.parse(stored);
       } else {
-        // Initialize with sample data if no content exists
-        localStorage.setItem(this.storageKey, JSON.stringify(mockContent));
-        return mockContent;
+        return [];
       }
     } catch (error) {
       console.error("Failed to fetch library content:", error);
