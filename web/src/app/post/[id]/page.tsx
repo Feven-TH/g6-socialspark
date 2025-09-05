@@ -9,16 +9,16 @@ import Toast from "@/components/Toast";
 import { useSchedulePostMutation } from "@/lib/redux/services/api";
 import type { ToastState, LibraryItem } from "@/types/library";
 import { libraryService } from "@/services/libraryService";
+import Image from "next/image";
 
-const PLATFORMS = ["instagram", "facebook", "pinterest"] as const;
+const PLATFORMS = ["instagram", "pinterest"] as const;
 
 export default function PostSchedulePage() {
   const params = useParams() as { id: string | undefined };
   const router = useRouter();
 
   const [assetId, setAssetId] = useState<string>("");
-  const [platform, setPlatform] =
-    useState<(typeof PLATFORMS)[number]>("instagram");
+  const [platforms, setPlatforms] = useState<string[]>(["instagram"]);
   const [postText, setPostText] = useState<string>("");
   const [runAt, setRunAt] = useState<string>("");
   const [item, setItem] = useState<LibraryItem | null>(null);
@@ -37,7 +37,6 @@ export default function PostSchedulePage() {
     );
   };
 
-  // Fetch library item by ID and set assetId from its URL
   useEffect(() => {
     const loadItem = async () => {
       const id = String(params?.id || "");
@@ -47,25 +46,22 @@ export default function PostSchedulePage() {
         const fetched = await libraryService.getLibraryItem(id);
         if (fetched) {
           setItem(fetched);
-          setPostText(fetched.caption || "");
+          console.log("fetched", fetched.imageUrl);
 
-          // Extract assetId from imageUrl or videoUrl
+          // Handle hashtags array or string
+          const hashtags = fetched.hashtags.join(" ");
+
+          setPostText(fetched.caption + (hashtags ? " " + hashtags : ""));
+
           const url = fetched.imageUrl || fetched.videoUrl || "";
-          if (url) {
-            const parts = url.split("/");
-            const filename = parts[parts.length - 1];
-            const derivedId = filename.split(".")[0];
-            setAssetId(derivedId);
-          }
+          if (url) setAssetId(url);
 
-          // Type guard for platforms
           const isPlatform = (p: string): p is (typeof PLATFORMS)[number] => {
             return PLATFORMS.includes(p as (typeof PLATFORMS)[number]);
           };
 
-          // Default platform to item's platform if valid
           if (fetched.platform && isPlatform(fetched.platform)) {
-            setPlatform(fetched.platform);
+            setPlatforms([fetched.platform]);
           }
         }
       } catch (error) {
@@ -105,6 +101,7 @@ export default function PostSchedulePage() {
   const validate = (): string | null => {
     if (!assetId) return "Missing asset ID.";
     if (!postText.trim()) return "Post text is required.";
+    if (!platforms.length) return "Select at least one platform.";
     return null;
   };
 
@@ -128,9 +125,9 @@ export default function PostSchedulePage() {
 
       await schedulePost({
         asset_id: assetId,
-        platforms: [platform],
+        platforms,
         post_text: postText.trim(),
-        run_at: targetRunAt,
+        run_at: targetRunAt, // backend decides status
       }).unwrap();
 
       showToast(
@@ -163,11 +160,15 @@ export default function PostSchedulePage() {
             {item && (
               <div className="flex gap-4 p-4 border rounded-lg bg-muted/50">
                 <div className="w-20 h-20 rounded-lg overflow-hidden flex-shrink-0">
-                  <img
-                    src={item.imageUrl || "/placeholder.svg"}
-                    alt={item.title}
-                    className="w-full h-full object-cover"
-                  />
+                  <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 relative">
+                    <Image
+                      src={item.imageUrl || "/placeholder.svg"}
+                      alt={item.title}
+                      width={64}
+                      height={64}
+                      className="object-cover rounded-lg"
+                    />
+                  </div>
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold mb-1 line-clamp-2">
@@ -181,21 +182,35 @@ export default function PostSchedulePage() {
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="platform">Platform</Label>
-              <select
-                id="platform"
-                value={platform}
-                onChange={(e) =>
-                  setPlatform(e.target.value as (typeof PLATFORMS)[number])
-                }
-                className="w-full rounded-md border border-gray-300 bg-white p-2.5 text-sm outline-none focus:ring-2 focus:ring-black"
-              >
-                {PLATFORMS.map((p) => (
-                  <option key={p} value={p}>
-                    {p.charAt(0).toUpperCase() + p.slice(1)}
-                  </option>
-                ))}
-              </select>
+              <Label>Platforms</Label>
+              <div className="flex gap-2 flex-wrap">
+                {PLATFORMS.map((p) => {
+                  const selected = platforms.includes(p);
+                  return (
+                    <button
+                      key={p}
+                      type="button"
+                      onClick={() => {
+                        if (selected) {
+                          setPlatforms(platforms.filter((plat) => plat !== p));
+                        } else {
+                          setPlatforms([...platforms, p]);
+                        }
+                      }}
+                      className={`px-4 py-1 rounded-full text-sm font-medium transition-colors ${
+                        selected
+                          ? "bg-black text-white" // selected color
+                          : "bg-gray-200 text-gray-700 hover:bg-gray-300" // default color
+                      }`}
+                    >
+                      {p.charAt(0).toUpperCase() + p.slice(1)}
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Click to select multiple platforms
+              </p>
             </div>
 
             <div className="space-y-2">
