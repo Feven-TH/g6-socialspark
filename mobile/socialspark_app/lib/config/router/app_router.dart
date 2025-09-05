@@ -1,8 +1,11 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:http/http.dart' as http;
+
 import 'package:socialspark_app/features/authentication/presentation/pages/signup_page.dart';
 import 'package:socialspark_app/features/brand/presentation/controller/brand_setup_controller.dart';
+import 'package:socialspark_app/features/editor/domain/usecases/update_content.dart';
 import 'package:socialspark_app/features/library/presentation/pages/library_page.dart';
 import '../../core/services/session_store.dart';
 import '../../features/splash/presentation/pages/splash_page.dart';
@@ -16,8 +19,9 @@ import '../../features/editor/data/repositories/content_repository_impl.dart';
 import '../../features/editor/domain/usecases/create_content.dart';
 import '../../features/editor/data/datasources/content_api_data_source.dart';
 import '../../features/editor/presentation/bloc/content_editor_event.dart';
-import '../../features/editor/domain/usecases/update_content.dart';
-import 'package:http/http.dart' as http;
+
+// NEW: Create page route target
+import '../../features/create/presentation/pages/create_content_page.dart';
 
 GoRouter buildRouter(SessionStore session) {
   return GoRouter(
@@ -64,8 +68,7 @@ GoRouter buildRouter(SessionStore session) {
             name: 'about',
             builder: (_, __) => const AboutUsPage(),
           ),
-          // Assuming settings and scheduler were from the other branch and are being kept
-          // If you need to add settings and scheduler back, you'll need to re-add those routes
+          // add more nested home routes here if needed
         ],
       ),
 
@@ -75,7 +78,8 @@ GoRouter buildRouter(SessionStore session) {
         name: 'library',
         builder: (_, __) => const LibraryPage(),
       ),
-      
+
+      // Editor
       GoRoute(
         path: '/editor',
         name: 'editor',
@@ -99,31 +103,47 @@ GoRouter buildRouter(SessionStore session) {
           );
         },
       ),
+
+      // NEW: Create content page (target for FAB)
+      GoRoute(
+        path: '/create',
+        name: 'create',
+        builder: (_, __) => const CreateContentPage(),
+      ),
     ],
 
     redirect: (ctx, state) {
-      if (state.matchedLocation == '/splash') return null;
-      if (state.matchedLocation == '/login') return null;
-      if (state.matchedLocation == '/signup') return null;
-      if (state.matchedLocation == '/home/about') return null;
+      // allow public routes without redirection
+      const publicPaths = <String>{
+        '/splash',
+        '/login',
+        '/signup',
+        '/home/about',
+      };
+      if (publicPaths.contains(state.matchedLocation)) return null;
 
       switch (session.stage) {
         case AppStage.splash:
           return '/splash';
+
         case AppStage.unauth:
           return '/login';
+
         case AppStage.brandSetup:
           return '/brand';
+
         case AppStage.home:
-          if (state.matchedLocation == '/home' ||
-              state.matchedLocation == '/home/about' ||
-              state.matchedLocation == '/library' ||
-              state.matchedLocation == '/editor') {
-            return null;
-          }
+          // Allow these when authenticated/on home stage
+          const allowed = <String>{
+            '/home',
+            '/home/about',
+            '/library',
+            '/editor',
+            '/create', // ← important: FAB navigates here
+          };
+          if (allowed.contains(state.matchedLocation)) return null;
           return '/home';
       }
-      return null;
-    }, 
+    },
   );
 }
