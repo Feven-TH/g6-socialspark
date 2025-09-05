@@ -210,7 +210,7 @@ export default function ContentListItem({
               size="sm"
               variant="ghost"
               onClick={() => onExport(item)}
-              title="Export"
+              title="Download"
               className="flex justify-center p-2 flex-shrink-0"
             >
               <Download className="w-4 h-4" />

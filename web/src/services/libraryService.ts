@@ -1,65 +1,5 @@
 import { LibraryItem, EditorContent, SchedulerContent } from "@/types/library";
 
-// Mock data for development
-const mockContent: LibraryItem[] = [
-  {
-    id: "1",
-    title: "Caramel Macadamia Latte",
-    type: "image",
-    contentType: "image",
-    platform: "instagram",
-    createdAt: "2024-01-15",
-    status: "published",
-    engagement: { likes: 45, comments: 8, views: 234 },
-    caption: "Try our new Caramel Macadamia Latte! Perfect coffee blend...",
-    hashtags: ["AddisAbebaCafe", "EthiopianCoffee", "Latte"],
-    videoUrl: "",
-    imageUrl: "/ethiopian-cafe-latte-with-caramel-and-macadamia-nu.png",
-  },
-  {
-    id: "2",
-    title: "Behind the Scenes",
-    type: "video",
-    contentType: "video",
-    platform: "tiktok",
-    createdAt: "2024-01-14",
-    status: "draft",
-    engagement: { likes: 0, comments: 0, views: 0 },
-    caption: "Watch how we make our signature latte...",
-    hashtags: ["BehindTheScenes", "CoffeeProcess", "Barista"],
-    videoUrl: "/short-video-of-latte-being-made.mp4",
-    imageUrl: "/short-video-of-latte-being-made.png",
-  },
-  {
-    id: "3",
-    title: "Weekend Special",
-    type: "image",
-    contentType: "image",
-    platform: "instagram",
-    createdAt: "2024-01-13",
-    status: "scheduled",
-    engagement: { likes: 0, comments: 0, views: 0 },
-    caption: "Weekend vibes with our special blend...",
-    hashtags: ["WeekendSpecial", "CoffeeLovers", "Relax"],
-    videoUrl: "",
-    imageUrl: "/weekend-coffee-special.png",
-  },
-  {
-    id: "4",
-    title: "Customer Review",
-    type: "image",
-    contentType: "image",
-    platform: "instagram",
-    createdAt: "2024-01-12",
-    status: "published",
-    engagement: { likes: 67, comments: 12, views: 345 },
-    caption: "Amazing feedback from our lovely customers...",
-    hashtags: ["CustomerLove", "Reviews", "HappyCustomers"],
-    videoUrl: "",
-    imageUrl: "/happy-customer-with-coffee.png",
-  },
-];
-
 class LibraryService {
   private storageKey = "libraryContent";
 
@@ -70,9 +10,7 @@ class LibraryService {
       if (stored) {
         return JSON.parse(stored);
       } else {
-        // Initialize with sample data if no content exists
-        localStorage.setItem(this.storageKey, JSON.stringify(mockContent));
-        return mockContent;
+        return [];
       }
     } catch (error) {
       console.error("Failed to fetch library content:", error);
@@ -152,50 +90,58 @@ class LibraryService {
       throw error;
     }
   }
-  // Export image
-  async exportImage(item: LibraryItem): Promise<Blob> {
-    return new Promise((resolve, reject) => {
-      try {
-        const canvas = document.createElement("canvas");
-        const ctx = canvas.getContext("2d");
-        const img = new window.Image();
-
-        img.onload = () => {
-          canvas.width = img.width;
-          canvas.height = img.height;
-          ctx?.drawImage(img, 0, 0);
-
-          // Add text overlay if needed
-          if (ctx) {
-            ctx.fillStyle = "white";
-            ctx.font = "16px Arial";
-            ctx.fillText(item.caption, 10, img.height - 20);
-          }
-
-          canvas.toBlob((blob) => {
-            if (blob) {
-              resolve(blob);
-            } else {
-              reject(new Error("Failed to create blob"));
-            }
-          }, "image/png");
-        };
-
-        img.onerror = () => reject(new Error("Failed to load image"));
-        img.src = item.imageUrl;
-      } catch (error) {
-        reject(error);
-      }
-    });
+  // Export image / video with blob-based download (reliable across browsers)
+  async exportImage(url: string, filename: string) {
+    await this.downloadFile(url, filename);
   }
 
   async downloadVideo(url: string, filename: string) {
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+    await this.downloadFile(url, filename);
+  }
+
+  private async downloadFile(url: string, filename: string) {
+    const absoluteUrl = url.startsWith("http")
+      ? url
+      : `${window.location.origin}${url.startsWith("/") ? "" : "/"}${url}`;
+    try {
+      const response = await fetch(absoluteUrl);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch file: ${response.status}`);
+      }
+      const blob = await response.blob();
+      const objectUrl = URL.createObjectURL(blob);
+
+      const anchor = document.createElement("a");
+      anchor.href = objectUrl;
+      anchor.download = filename;
+      document.body.appendChild(anchor);
+      anchor.click();
+      document.body.removeChild(anchor);
+
+      // Cleanup
+      URL.revokeObjectURL(objectUrl);
+    } catch (err) {
+      console.error("Blob download failed, attempting direct link:", err);
+      try {
+        const anchor = document.createElement("a");
+        anchor.href = absoluteUrl;
+        anchor.download = filename;
+        document.body.appendChild(anchor);
+        anchor.click();
+        document.body.removeChild(anchor);
+      } catch (fallbackErr) {
+        console.error(
+          "Direct download fallback failed, opening in new tab:",
+          fallbackErr
+        );
+        try {
+          window.open(absoluteUrl, "_blank");
+        } catch (openErr) {
+          console.error("Open in new tab failed:", openErr);
+          throw openErr;
+        }
+      }
+    }
   }
 
   // Copy text to clipboard
@@ -219,7 +165,12 @@ class LibraryService {
       const matchesSearch =
         item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         item.caption.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesType = filterType === "all" || item.type === filterType;
+      const isImage = !!item.imageUrl && !item.videoUrl;
+      const isVideo = !!item.videoUrl;
+      const matchesType =
+        filterType === "all" ||
+        (filterType === "image" && isImage) ||
+        (filterType === "video" && isVideo);
       const matchesPlatform =
         filterPlatform === "all" || item.platform === filterPlatform;
 

@@ -158,7 +158,7 @@ export default function ContentCard({
               size="sm"
               variant="ghost"
               onClick={() => onExport(item)}
-              title="Export as image"
+              title="Download"
               className="p-1 sm:p-2"
             >
               <Download className="w-3 h-3 sm:w-4 sm:h-4" />
