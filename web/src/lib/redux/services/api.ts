@@ -13,6 +13,7 @@ import type {
   ExportResponse,
   ScheduleRequest,
   ScheduleResponse,
+  RenderImageRequest,
 } from "../../types/api";
 
 export const socialSparkApi = createApi({
@@ -41,6 +42,36 @@ export const socialSparkApi = createApi({
         method: "POST",
         body,
       }),
+    }),
+
+    renderImage: builder.mutation<
+      { task_id: string; status: string },
+      RenderImageRequest
+    >({
+      query: (body) => ({
+        url: "/render/image",
+        method: "POST",
+        body,
+      }),
+    }),
+
+    // In your api.ts - update getImageStatus return type
+    getImageStatus: builder.query<
+      {
+        status: string;
+        video_url?: {
+          status: string;
+          image_url?: string;
+          prompt_used?: string;
+          style?: string;
+          aspect_ratio?: string;
+          platform?: string;
+          metadata?: any;
+        };
+      },
+      string
+    >({
+      query: (task_id) => `/status/${task_id}`,
     }),
 
     generateStoryboard: builder.mutation<
@@ -96,4 +127,6 @@ export const {
   useGetTaskQuery,
   useExportDraftMutation,
   useSchedulePostMutation,
+  useRenderImageMutation,
+  useGetImageStatusQuery,
 } = socialSparkApi;

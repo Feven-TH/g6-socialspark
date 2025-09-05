@@ -1,5 +1,4 @@
 "use client";
-import Image from "next/image";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/button";
 import {
@@ -44,6 +43,8 @@ import {
   useRenderVideoMutation,
   useGenerateStoryboardMutation,
   useGetTaskQuery,
+  useRenderImageMutation,
+  useGetImageStatusQuery,
 } from "@/lib/redux/services/api";
 import { Alert, AlertDescription } from "@/components/alert";
 import type { Brand } from "../types/common";
@@ -75,6 +76,7 @@ export default function Dashboard() {
     imageUrl?: string;
     videoUrl?: string;
     taskId: string;
+    imageId: string;
     storyboard?: StoryboardShot[];
     overlays?: { text: string; position?: string }[];
   };
@@ -92,6 +94,8 @@ export default function Dashboard() {
   const [renderVideo, { isLoading: isVideoLoading, error: videoError }] =
     useRenderVideoMutation();
 
+  const [renderImage, { error: imageRenderError }] = useRenderImageMutation();
+
   const isLoading =
     isCaptionLoading || isImageLoading || isStoryboardLoading || isVideoLoading;
 
@@ -100,6 +104,7 @@ export default function Dashboard() {
     hashtags: [],
     imageUrl: "",
     videoUrl: "",
+    imageId: "",
     taskId: "",
   });
 
@@ -118,6 +123,14 @@ export default function Dashboard() {
     generatedContent.taskId,
     {
       skip: !generatedContent.taskId,
+      pollingInterval: 2000,
+    }
+  );
+
+  const { data: imageStatus, error: imageStatusError } = useGetImageStatusQuery(
+    generatedContent.imageId,
+    {
+      skip: !generatedContent.imageId,
       pollingInterval: 2000,
     }
   );
@@ -149,12 +162,48 @@ export default function Dashboard() {
   }, [taskError]);
 
   useEffect(() => {
-    const error = captionError || imageError || storyboardError || videoError;
+    if (imageStatus) {
+      console.log("FULL Image status:", imageStatus);
+      const status = imageStatus.video_url?.status?.toLowerCase();
+      const imageUrl = imageStatus.video_url?.image_url;
+
+      console.log("Nested status:", status);
+      console.log("Image URL:", imageUrl);
+
+      if ((status === "ready" || status === "completed") && imageUrl) {
+        setGeneratedContent((prev) => ({
+          ...prev,
+          imageUrl: imageUrl,
+        }));
+        setProgress(100);
+        setCurrentStep("preview");
+      } else if (status === "failed" || status === "error") {
+        setError("Image generation failed. Please try again.");
+        setIsGenerating(false);
+      }
+    }
+  }, [imageStatus]);
+
+  useEffect(() => {
+    if (imageStatusError) {
+      console.error("Image status error:", imageStatusError);
+      setError("Failed to check image status");
+      setIsGenerating(false);
+    }
+  }, [imageStatusError]);
+
+  useEffect(() => {
+    const error =
+      captionError ||
+      imageError ||
+      storyboardError ||
+      videoError ||
+      imageRenderError;
     if (error) {
       setError("Failed to generate content. Please try again.");
       setIsGenerating(false);
     }
-  }, [captionError, imageError, storyboardError, videoError]);
+  }, [captionError, imageError, storyboardError, videoError, imageRenderError]);
 
   const translations = {
     en: {
@@ -218,6 +267,7 @@ export default function Dashboard() {
       hashtags: [],
       imageUrl: "",
       videoUrl: "",
+      imageId: "",
       taskId: "",
     });
 
@@ -253,32 +303,53 @@ export default function Dashboard() {
       }));
 
       setProgress(40);
-
       if (contentType === "image") {
         setProgress(60);
-        const imageResponse = await generateImage({
-          idea,
-          aspect_ratio: platform === "instagram" ? "1:1" : "9:16",
-          brand_presets: {
-            name: brand.businessName || "",
-            tone: tone,
-            colors: [
-              brand.primaryColor || "#000000",
-              brand.secondaryColor || "#FFFFFF",
-            ],
-            default_hashtags: brand.defaultHashtags || [],
-            footer_text: `© ${brand.businessName} ${new Date().getFullYear()}`,
-          },
-        }).unwrap();
 
-        setGeneratedContent((prev) => ({
-          ...prev,
-          imageUrl: imageResponse.image_url,
-        }));
-        setProgress(100);
-        setCurrentStep("preview");
+        try {
+          const promptResponse = await generateImage({
+            prompt: idea,
+            style: "realistic",
+            aspect_ratio: platform === "instagram" ? "1:1" : "9:16",
+            platform,
+            brand_presets: {
+              name: brand.businessName || "",
+              tone: tone,
+              colors: [
+                brand.primaryColor || "#000000",
+                brand.secondaryColor || "#FFFFFF",
+              ],
+              default_hashtags: brand.defaultHashtags || [],
+              footer_text: `© ${
+                brand.businessName
+              } ${new Date().getFullYear()}`,
+            },
+          }).unwrap();
+
+          const renderResponse = await renderImage({
+            prompt_used: promptResponse.prompt_used,
+            style: promptResponse.style,
+            aspect_ratio: promptResponse.aspect_ratio,
+            platform: promptResponse.platform,
+          }).unwrap();
+
+          if (!renderResponse?.task_id) {
+            throw new Error("Failed to get image task ID");
+          }
+
+          setGeneratedContent((prev) => ({
+            ...prev,
+            imageId: renderResponse.task_id,
+          }));
+
+          setProgress(80);
+          setCurrentStep("preview");
+        } catch (error) {
+          console.error("Image generation failed:", error);
+          setError("Failed to generate image");
+          setIsGenerating(false);
+        }
       }
-
       if (contentType === "video") {
         setProgress(50);
         const storyboardResponse = await generateStoryboard({
@@ -363,7 +434,24 @@ export default function Dashboard() {
         return "Processing video...";
     }
   };
+  const getImageStatusMessage = () => {
+    if (!generatedContent.imageId) return "Image Preview";
+    const status = imageStatus?.video_url?.status?.toLowerCase();
 
+    switch (status) {
+      case "queued":
+        return "Image in queue...";
+      case "processing":
+        return "Image is being generated...";
+      case "ready":
+      case "completed":
+        return "Image ready!";
+      case "failed":
+        return "Image failed - try again";
+      default:
+        return "Processing image...";
+    }
+  };
   const businessTypes = [
     { icon: Coffee, label: "Café", value: "cafe" },
     { icon: ShoppingBag, label: "Retail", value: "retail" },
@@ -535,10 +623,18 @@ export default function Dashboard() {
                         ? "Generating caption..."
                         : progress < 60
                         ? "Creating hashtags..."
+                        : progress < 70
+                        ? "Generating image prompt..."
                         : progress < 80
-                        ? "Generating visual content..."
+                        ? contentType === "image"
+                          ? imageStatus?.status === "PROCESSING"
+                            ? "Image is being generated..."
+                            : "Rendering image..."
+                          : "Generating storyboard..."
                         : progress < 95
-                        ? "Creating video..."
+                        ? contentType === "image"
+                          ? "Finalizing image..."
+                          : "Rendering video..."
                         : "Finalizing content..."}
                     </p>
                   </div>
@@ -608,69 +704,151 @@ export default function Dashboard() {
                         <ImageIcon className="w-4 h-4" />
                         <label className="font-medium">{t.preview}</label>
                       </div>
-                      <div className="aspect-square bg-muted rounded-lg overflow-hidden">
+
+                      <div className="aspect-square bg-muted rounded-xl overflow-hidden border shadow-sm">
                         {contentType === "image" ? (
-                          <Image
-                            src={
-                              generatedContent.imageUrl || "/placeholder.svg"
-                            }
-                            alt="Generated content"
-                            className="w-full h-full object-cover"
-                          />
+                          generatedContent.imageUrl ? (
+                            <img
+                              src={generatedContent.imageUrl}
+                              alt="Generated content"
+                              className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                            />
+                          ) : (
+                            <div className="w-full h-full bg-muted flex items-center justify-center">
+                              {generatedContent.imageId ? (
+                                <div className="relative text-center space-y-4">
+                                  {getImageStatusMessage() ===
+                                  "Image failed - try again" ? (
+                                    <>
+                                      <div className="w-20 h-20 mx-auto bg-red-100 rounded-full flex items-center justify-center">
+                                        <ImageIcon className="w-10 h-10 text-red-500" />
+                                      </div>
+                                      <p className="text-sm font-medium text-red-500">
+                                        {getImageStatusMessage()}
+                                      </p>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <div className="relative w-24 h-24 mx-auto">
+                                        <div className="absolute inset-0 border-4 border-primary/20 rounded-full animate-spin">
+                                          <div className="absolute top-0 left-1/2 w-2 h-2 bg-primary rounded-full transform -translate-x-1/2 -translate-y-1"></div>
+                                        </div>
+
+                                        <div className="absolute inset-2 bg-primary/10 rounded-full animate-pulse flex items-center justify-center">
+                                          <ImageIcon className="w-8 h-8 text-primary animate-bounce" />
+                                        </div>
+
+                                        <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 flex space-x-1">
+                                          <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
+                                          <div
+                                            className="w-2 h-2 bg-primary/60 rounded-full animate-pulse"
+                                            style={{ animationDelay: "0.2s" }}
+                                          ></div>
+                                          <div
+                                            className="w-2 h-2 bg-primary/30 rounded-full animate-pulse"
+                                            style={{ animationDelay: "0.4s" }}
+                                          ></div>
+                                        </div>
+                                      </div>
+
+                                      <div className="mt-8">
+                                        <p className="text-sm font-medium text-primary">
+                                          {getImageStatusMessage()}
+                                        </p>
+                                        <div className="flex justify-center mt-2">
+                                          <div className="flex space-x-1">
+                                            <div className="w-1 h-1 bg-muted-foreground rounded-full animate-bounce"></div>
+                                            <div
+                                              className="w-1 h-1 bg-muted-foreground rounded-full animate-bounce"
+                                              style={{ animationDelay: "0.1s" }}
+                                            ></div>
+                                            <div
+                                              className="w-1 h-1 bg-muted-foreground rounded-full animate-bounce"
+                                              style={{ animationDelay: "0.2s" }}
+                                            ></div>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </>
+                                  )}
+                                </div>
+                              ) : (
+                                <div className="relative text-center">
+                                  <div className="w-20 h-20 mx-auto bg-muted-foreground/10 rounded-full flex items-center justify-center mb-4">
+                                    <ImageIcon className="w-10 h-10 text-muted-foreground/60" />
+                                  </div>
+                                  <p className="text-sm text-muted-foreground">
+                                    Image Preview
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+                          )
                         ) : (
                           <div className="w-full h-full bg-muted flex items-center justify-center">
                             {generatedContent.videoUrl ? (
                               <video
                                 src={generatedContent.videoUrl}
                                 controls
-                                className="w-full h-full object-cover"
+                                className="w-full h-full object-cover rounded-lg hover:scale-105 transition-transform duration-300"
                               />
                             ) : (
                               <div className="text-center space-y-4">
                                 {generatedContent.taskId ? (
-                                  <div className="relative">
-                                    <div className="relative w-24 h-24 mx-auto">
-                                      <div className="absolute inset-0 border-4 border-primary/20 rounded-full animate-spin">
-                                        <div className="absolute top-0 left-1/2 w-2 h-2 bg-primary rounded-full transform -translate-x-1/2 -translate-y-1"></div>
+                                  getVideoStatusMessage() ===
+                                  "Video failed - try again" ? (
+                                    <>
+                                      <div className="w-20 h-20 mx-auto bg-red-100 rounded-full flex items-center justify-center">
+                                        <Video className="w-10 h-10 text-red-500" />
                                       </div>
-
-                                      <div className="absolute inset-2 bg-primary/10 rounded-full animate-pulse flex items-center justify-center">
-                                        {generatedContent.taskId === "failed"}
-                                        <Video className="w-8 h-8 text-primary animate-bounce" />
-                                      </div>
-
-                                      <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 flex space-x-1">
-                                        <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
-                                        <div
-                                          className="w-2 h-2 bg-primary/60 rounded-full animate-pulse"
-                                          style={{ animationDelay: "0.2s" }}
-                                        ></div>
-                                        <div
-                                          className="w-2 h-2 bg-primary/30 rounded-full animate-pulse"
-                                          style={{ animationDelay: "0.4s" }}
-                                        ></div>
-                                      </div>
-                                    </div>
-
-                                    <div className="mt-8">
-                                      <p className="text-sm font-medium text-primary">
+                                      <p className="text-sm font-medium text-red-500">
                                         {getVideoStatusMessage()}
                                       </p>
-                                      <div className="flex justify-center mt-2">
-                                        <div className="flex space-x-1">
-                                          <div className="w-1 h-1 bg-muted-foreground rounded-full animate-bounce"></div>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <div className="relative w-24 h-24 mx-auto">
+                                        <div className="absolute inset-0 border-4 border-primary/20 rounded-full animate-spin">
+                                          <div className="absolute top-0 left-1/2 w-2 h-2 bg-primary rounded-full transform -translate-x-1/2 -translate-y-1"></div>
+                                        </div>
+
+                                        <div className="absolute inset-2 bg-primary/10 rounded-full animate-pulse flex items-center justify-center">
+                                          <Video className="w-8 h-8 text-primary animate-bounce" />
+                                        </div>
+
+                                        <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 flex space-x-1">
+                                          <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
                                           <div
-                                            className="w-1 h-1 bg-muted-foreground rounded-full animate-bounce"
-                                            style={{ animationDelay: "0.1s" }}
+                                            className="w-2 h-2 bg-primary/60 rounded-full animate-pulse"
+                                            style={{ animationDelay: "0.2s" }}
                                           ></div>
                                           <div
-                                            className="w-1 h-1 bg-muted-foreground rounded-full animate-bounce"
-                                            style={{ animationDelay: "0.2s" }}
+                                            className="w-2 h-2 bg-primary/30 rounded-full animate-pulse"
+                                            style={{ animationDelay: "0.4s" }}
                                           ></div>
                                         </div>
                                       </div>
-                                    </div>
-                                  </div>
+
+                                      <div className="mt-8">
+                                        <p className="text-sm font-medium text-primary">
+                                          {getVideoStatusMessage()}
+                                        </p>
+                                        <div className="flex justify-center mt-2">
+                                          <div className="flex space-x-1">
+                                            <div className="w-1 h-1 bg-muted-foreground rounded-full animate-bounce"></div>
+                                            <div
+                                              className="w-1 h-1 bg-muted-foreground rounded-full animate-bounce"
+                                              style={{ animationDelay: "0.1s" }}
+                                            ></div>
+                                            <div
+                                              className="w-1 h-1 bg-muted-foreground rounded-full animate-bounce"
+                                              style={{ animationDelay: "0.2s" }}
+                                            ></div>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </>
+                                  )
                                 ) : (
                                   <div className="relative">
                                     <div className="w-20 h-20 mx-auto bg-muted-foreground/10 rounded-full flex items-center justify-center mb-4">
