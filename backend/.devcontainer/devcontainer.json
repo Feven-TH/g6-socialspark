@@ -1,0 +1,8 @@
+{
+  "name": "SocialSpark Backend",
+  "dockerComposeFile": ["docker-compose.yml"],
+  "service": "web",
+  "workspaceFolder": "/workspaces/app",
+  "shutdownAction": "stopCompose",
+  "forwardPorts": [8000, 9000, 9001]
+}
