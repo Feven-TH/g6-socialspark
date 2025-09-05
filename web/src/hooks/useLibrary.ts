@@ -94,30 +94,40 @@ export function useLibrary() {
     async (item: LibraryItem) => {
       try {
         if (item.videoUrl) {
-          // Download the video file
-          libraryService.downloadVideo(
-            item.videoUrl,
-            `${item.title.replace(/\s+/g, "_")}.mp4`
-          );
-          showToast(`"${item.title}" video downloaded successfully`, "success");
-        } else if (item.imageUrl) {
-          // Export as image using canvas
-          const blob = await libraryService.exportImage(item);
-          const url = URL.createObjectURL(blob);
-          const link = document.createElement("a");
-          link.href = url;
-          link.download = `${item.title.replace(/\s+/g, "_")}.png`;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          URL.revokeObjectURL(url);
-          showToast(
-            `"${item.title}" exported as image successfully`,
-            "success"
-          );
-        } else {
-          showToast("No content to export", "error");
+          try {
+            await libraryService.downloadVideo(
+              item.videoUrl,
+              `${item.title.replace(/\s+/g, "_")}.mp4`
+            );
+            showToast(`"${item.title}" video downloaded successfully`, "success");
+            return;
+          } catch (e) {
+            // Fallback to downloading the thumbnail image if video fetch fails
+            if (item.imageUrl) {
+              await libraryService.exportImage(
+                item.imageUrl,
+                `${item.title.replace(/\s+/g, "_")}.png`
+              );
+              showToast(
+                `Video unavailable. Downloaded image for "${item.title}"`,
+                "success"
+              );
+              return;
+            }
+            throw e;
+          }
         }
+
+        if (item.imageUrl) {
+          await libraryService.exportImage(
+            item.imageUrl,
+            `${item.title.replace(/\s+/g, "_")}.png`
+          );
+          showToast(`"${item.title}" image downloaded successfully`, "success");
+          return;
+        }
+
+        showToast("No content to export", "error");
       } catch (error) {
         showToast("Failed to export content", "error");
       }
