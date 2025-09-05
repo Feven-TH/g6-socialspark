@@ -23,7 +23,7 @@ import { LibraryItem } from "@/types/library";
 
 interface ContentListItemProps {
   item: LibraryItem;
-  copiedId: number | null;
+  copiedId: string | null;
   onExport: (item: LibraryItem) => void;
   onCopy: (item: LibraryItem) => void;
   onCopyHashtags: (item: LibraryItem) => void;
@@ -42,19 +42,43 @@ export default function ContentListItem({
   onSchedule,
   onDelete,
 }: ContentListItemProps) {
+  // Map status for display
+  const displayStatus =
+    item.status === "queued"
+      ? "scheduled"
+      : item.status === "done"
+      ? "published"
+      : "draft";
+
   return (
     <Card>
       <CardContent className="p-4 sm:p-6">
         <div className="flex flex-col sm:flex-row sm:items-start gap-4">
-          {/* Image */}
+          {/* Image or Video */}
           <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0">
-            <Image
-              src={item.imageUrl || "/placeholder.svg"}
-              alt={item.title}
-              width={64}
-              height={64}
-              className="object-cover"
-            />
+            {item.videoUrl ? (
+              <video
+                src={item.videoUrl}
+                controls
+                className="w-full h-full object-cover"
+              />
+            ) : item.imageUrl ? (
+              <Image
+                src={item.imageUrl}
+                alt={item.title}
+                width={64}
+                height={64}
+                className="object-cover"
+              />
+            ) : (
+              <Image
+                src="/placeholder.svg"
+                alt="placeholder"
+                width={64}
+                height={64}
+                className="object-cover"
+              />
+            )}
           </div>
 
           {/* Content */}
@@ -66,15 +90,15 @@ export default function ContentListItem({
               </h3>
               <Badge
                 variant={
-                  item.status === "published"
+                  displayStatus === "published"
                     ? "default"
-                    : item.status === "scheduled"
+                    : displayStatus === "scheduled"
                     ? "secondary"
                     : "outline"
                 }
                 className="self-start sm:self-center text-xs sm:text-sm"
               >
-                {item.status}
+                {displayStatus}
               </Badge>
             </div>
 
@@ -107,18 +131,20 @@ export default function ContentListItem({
                 <span className="hidden sm:inline">{item.platform}</span>
               </div>
               <div className="flex items-center gap-1">
-                {item.type === "image" ? (
-                  <ImageIcon className="w-3 h-3 sm:w-4 sm:h-4" />
-                ) : (
+                {item.videoUrl ? (
                   <Video className="w-3 h-3 sm:w-4 sm:h-4" />
+                ) : (
+                  <ImageIcon className="w-3 h-3 sm:w-4 sm:h-4" />
                 )}
-                <span className="hidden sm:inline">{item.type}</span>
+                <span className="hidden sm:inline">
+                  {item.videoUrl ? "video" : "image"}
+                </span>
               </div>
               <div className="flex items-center gap-1">
                 <Calendar className="w-3 h-3 sm:w-4 sm:h-4" />
                 {new Date(item.createdAt).toLocaleDateString()}
               </div>
-              {item.status === "published" && (
+              {displayStatus === "published" && (
                 <>
                   <div className="flex items-center gap-1">
                     <Heart className="w-3 h-3 sm:w-4 sm:h-4" />
@@ -133,88 +159,86 @@ export default function ContentListItem({
             </div>
           </div>
 
-          {/* Actions + Utilities */}
-          <div className="flex flex-wrap sm:flex-nowrap items-stretch sm:items-center gap-2 w-full sm:w-auto mt-2 sm:mt-0">
-            {/* Edit / View / Schedule */}
-            <div className="flex flex-row flex-nowrap gap-1 w-full sm:w-auto justify-between mt-2 sm:mt-0">
-              <Link href={`/view/${item.id}`}>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="flex-1 flex justify-center p-2"
-                  title="watch detailed view"
-                >
-                  <Eye className="w-4 h-4" />
-                </Button>
-              </Link>
-
+          {/* All Buttons Horizontal */}
+          <div className="flex flex-row gap-2 overflow-x-auto mt-2 sm:mt-0">
+            <Link href={`/view/${item.id}`}>
               <Button
                 size="sm"
-                variant="outline"
-                onClick={() => onEdit(item)}
-                title="Edit"
-                className="flex-1 flex justify-center p-2"
+                variant="ghost"
+                className="flex justify-center p-2 flex-shrink-0"
+                title="watch detailed view"
               >
-                <Edit className="w-4 h-4" />
+                <Eye className="w-4 h-4" />
               </Button>
+            </Link>
 
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => onSchedule(item)}
-                title="set reminder"
-                className="flex-1 flex justify-center p-2"
-              >
-                <Clock className="w-4 h-4" />
-              </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => onEdit(item)}
+              title="Edit"
+              className="flex justify-center p-2 flex-shrink-0"
+            >
+              <Edit className="w-4 h-4" />
+            </Button>
+
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => onSchedule(item)}
+              title="schedule"
+              className="flex justify-center p-2 flex-shrink-0"
+            >
+              <Clock className="w-4 h-4" />
+            </Button>
+
+            {/* Post / Schedule button only for images */}
+            {item.imageUrl && (
               <Link href={`/post/${item.id}`}>
                 <Button
                   size="sm"
-                  variant="outline"
-                  className="flex-1 flex justify-center p-2"
+                  variant="ghost"
+                  className="flex justify-center p-2 flex-shrink-0"
                   title="Post / Schedule"
                 >
                   <Share className="w-4 h-4" />
                 </Button>
               </Link>
-            </div>
+            )}
 
-            {/* Utility buttons */}
-            <div className="flex flex-wrap gap-1 justify-start w-full sm:w-auto mt-2 sm:mt-0">
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => onExport(item)}
-                title="Export as image"
-                className="p-1 sm:p-2"
-              >
-                <Download className="w-3 h-3 sm:w-4 sm:h-4" />
-              </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => onExport(item)}
+              title="Export"
+              className="flex justify-center p-2 flex-shrink-0"
+            >
+              <Download className="w-4 h-4" />
+            </Button>
 
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => onCopy(item)}
-                title="Copy caption and hashtags"
-                className="p-1 sm:p-2"
-              >
-                {copiedId === item.id ? (
-                  <Check className="w-3 h-3 sm:w-4 sm:h-4 text-green-600" />
-                ) : (
-                  <Copy className="w-3 h-3 sm:w-4 sm:h-4" />
-                )}
-              </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => onCopy(item)}
+              title="Copy caption and hashtags"
+              className="flex justify-center p-2 flex-shrink-0"
+            >
+              {copiedId === item.id ? (
+                <Check className="w-4 h-4 text-green-600" />
+              ) : (
+                <Copy className="w-4 h-4" />
+              )}
+            </Button>
 
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => onDelete(item)}
-                title="Delete snap"
-                className="p-1 sm:p-2"
-              >
-                <Trash2 className="w-3 h-3 sm:w-4 sm:h-4" />
-              </Button>
-            </div>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => onDelete(item)}
+              title="Delete snap"
+              className="flex justify-center p-2 flex-shrink-0"
+            >
+              <Trash2 className="w-4 h-4" />
+            </Button>
           </div>
         </div>
       </CardContent>

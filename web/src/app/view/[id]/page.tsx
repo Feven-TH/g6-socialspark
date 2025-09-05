@@ -31,10 +31,10 @@ import libraryService from "@/services/libraryService";
 
 export default function Page() {
   const params = useParams();
-  const id = params?.id;
+  const id = Array.isArray(params?.id) ? params.id[0] : params?.id;
   const router = useRouter();
   const [content, setContent] = useState<ContentItem | null>(null);
-  const [copiedId, setCopiedId] = useState<number | null>(null);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
   const [toast, setToast] = useState<ToastState>({
     show: false,
     message: "",
@@ -46,7 +46,8 @@ export default function Page() {
 
     const loadContent = async () => {
       try {
-        const item = await libraryService.getLibraryItem(Number(id));
+        const item = await libraryService.getLibraryItem(id);
+        console.log("item", item);
         if (item) {
           setContent({
             id: item.id,

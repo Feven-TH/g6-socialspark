@@ -3,7 +3,7 @@ import { LibraryItem, EditorContent, SchedulerContent } from "@/types/library";
 // Mock data for development
 const mockContent: LibraryItem[] = [
   {
-    id: 1,
+    id: "1",
     title: "Caramel Macadamia Latte",
     type: "image",
     contentType: "image",
@@ -17,7 +17,7 @@ const mockContent: LibraryItem[] = [
     imageUrl: "/ethiopian-cafe-latte-with-caramel-and-macadamia-nu.png",
   },
   {
-    id: 2,
+    id: "2",
     title: "Behind the Scenes",
     type: "video",
     contentType: "video",
@@ -31,7 +31,7 @@ const mockContent: LibraryItem[] = [
     imageUrl: "/short-video-of-latte-being-made.png",
   },
   {
-    id: 3,
+    id: "3",
     title: "Weekend Special",
     type: "image",
     contentType: "image",
@@ -45,7 +45,7 @@ const mockContent: LibraryItem[] = [
     imageUrl: "/weekend-coffee-special.png",
   },
   {
-    id: 4,
+    id: "4",
     title: "Customer Review",
     type: "image",
     contentType: "image",
@@ -91,7 +91,7 @@ class LibraryService {
   }
 
   // Delete a library item
-  async deleteLibraryItem(id: number): Promise<void> {
+  async deleteLibraryItem(id: string): Promise<void> {
     try {
       const content = await this.getLibraryContent();
       const updatedContent = content.filter((item) => item.id !== id);
@@ -103,7 +103,7 @@ class LibraryService {
   }
 
   // Get a specific library item by ID
-  async getLibraryItem(id: number): Promise<LibraryItem | null> {
+  async getLibraryItem(id: string): Promise<LibraryItem | null> {
     try {
       const content = await this.getLibraryContent();
       return content.find((item) => item.id === id) || null;
@@ -115,7 +115,7 @@ class LibraryService {
 
   // Update a library item
   async updateLibraryItem(
-    id: number,
+    id: string,
     updates: Partial<LibraryItem>
   ): Promise<LibraryItem | null> {
     try {
@@ -187,6 +187,15 @@ class LibraryService {
         reject(error);
       }
     });
+  }
+
+  async downloadVideo(url: string, filename: string) {
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
   }
 
   // Copy text to clipboard

@@ -1,5 +1,5 @@
 export interface LibraryItem {
-  id: number;
+  id: string;
   title: string;
   caption: string;
   hashtags: string[];
@@ -18,7 +18,7 @@ export interface LibraryItem {
 }
 
 export interface ContentItem {
-  id: number;
+  id: string;
   title: string;
   caption: string;
   hashtags: string[];
@@ -42,7 +42,7 @@ export interface FilterState {
 }
 
 export interface EditorContent {
-  id: number;
+  id: string;
   caption: string;
   hashtags: string[];
   imageUrl: string;
@@ -52,7 +52,7 @@ export interface EditorContent {
 }
 
 export interface SchedulerContent {
-  id: number;
+  id: string;
   caption: string;
   hashtags: string[];
   imageUrl: string;

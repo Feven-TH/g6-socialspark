@@ -11,7 +11,7 @@ export function useLibrary() {
     filterPlatform: "all",
     viewMode: "grid",
   });
-  const [copiedId, setCopiedId] = useState<number | null>(null);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<LibraryItem | null>(null);
   const [toast, setToast] = useState<ToastState>({
@@ -90,22 +90,36 @@ export function useLibrary() {
     setDeleteDialogOpen(false);
     setItemToDelete(null);
   }, []);
-
   const handleExportAsImage = useCallback(
     async (item: LibraryItem) => {
       try {
-        const blob = await libraryService.exportImage(item);
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = `${item.title.replace(/\s+/g, "_")}.png`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-        showToast(`"${item.title}" exported as image successfully`, "success");
+        if (item.videoUrl) {
+          // Download the video file
+          libraryService.downloadVideo(
+            item.videoUrl,
+            `${item.title.replace(/\s+/g, "_")}.mp4`
+          );
+          showToast(`"${item.title}" video downloaded successfully`, "success");
+        } else if (item.imageUrl) {
+          // Export as image using canvas
+          const blob = await libraryService.exportImage(item);
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          link.href = url;
+          link.download = `${item.title.replace(/\s+/g, "_")}.png`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(url);
+          showToast(
+            `"${item.title}" exported as image successfully`,
+            "success"
+          );
+        } else {
+          showToast("No content to export", "error");
+        }
       } catch (error) {
-        showToast("Failed to export as image", "error");
+        showToast("Failed to export content", "error");
       }
     },
     [showToast]
