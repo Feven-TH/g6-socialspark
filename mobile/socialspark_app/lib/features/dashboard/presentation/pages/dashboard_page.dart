@@ -32,14 +32,10 @@ class _DashboardPageState extends State<DashboardPage> {
 
       // Floating button in the center
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Create Post flow coming soon')),
-          );
-        },
-        backgroundColor: const Color(0xFF0F2137),
-        child: const Icon(Icons.add, color: Colors.white),
-      ),
+  onPressed: () => context.go('/create'),   // ← was showing a SnackBar
+  backgroundColor: const Color(0xFF0F2137),
+  child: const Icon(Icons.add, color: Colors.white),
+),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
 
       // Bottom nav bar
