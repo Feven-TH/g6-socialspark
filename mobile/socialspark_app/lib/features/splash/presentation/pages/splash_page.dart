@@ -9,7 +9,7 @@ class SplashPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bg = const AssetImage('assets/images/splash.png'); // put any art here
+    final bg = const AssetImage('../../../../assets/images/splash.jpg'); // put any art here
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(image: DecorationImage(image: bg, fit: BoxFit.cover)),
