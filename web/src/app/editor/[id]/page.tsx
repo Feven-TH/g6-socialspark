@@ -10,6 +10,8 @@ import { Input } from "@/components/input";
 import { Label } from "@/components/label";
 import { Badge } from "@/components/badge";
 import { Slider } from "@/components/slider";
+import Toast from "@/components/Toast";
+import { ToastState } from "@/types/library";
 import * as htmlToImage from "html-to-image"; 
 
 import {
@@ -56,6 +58,7 @@ interface Snap {
   backgroundColor?: string;
   textVisible?: boolean;
   backgroundVisible?: boolean;
+  videoVisible?: boolean;
 }
 
 interface Brand {
@@ -95,11 +98,107 @@ export default function EditorPage() {
   const [isBold, setIsbold] = useState(false);
   const [isItalic, setIsItalic] = useState(false);
 
+  const [toast, setToast] = useState<ToastState>({
+    show: false,
+    message: "",
+    type: "success",
+  });
+
+  // Undo/Redo state
+  const [history, setHistory] = useState<Snap[]>([]);
+  const [historyIndex, setHistoryIndex] = useState(-1);
+
+  const showToast = (message: string, type: "success" | "error") => {
+    setToast({ show: true, message, type });
+    setTimeout(
+      () => setToast({ show: false, message: "", type: "success" }),
+      3000
+    );
+  };
+
+  // Save current state to history
+  const saveToHistory = () => {
+    const currentState: Snap = {
+      id: parseInt(id as string) || 0,
+      title: "Current Edit",
+      caption,
+      hashtags,
+      imageUrl,
+      videoUrl,
+      platform: "instagram",
+      type: videoUrl ? "video" : "image",
+      textAlign,
+      fontSize: fontSize[0],
+      isBold,
+      isItalic,
+      textColor,
+      backgroundColor,
+      textVisible,
+      backgroundVisible,
+    };
+
+    const newHistory = history.slice(0, historyIndex + 1);
+    newHistory.push(currentState);
+    
+    // Limit history to 50 states
+    if (newHistory.length > 50) {
+      newHistory.shift();
+    } else {
+      setHistoryIndex(historyIndex + 1);
+    }
+    
+    setHistory(newHistory);
+  };
+
+  // Undo function
+  const handleUndo = () => {
+    if (historyIndex > 0) {
+      const previousState = history[historyIndex - 1];
+      setCaption(previousState.caption);
+      setHashtags(previousState.hashtags);
+      setImageUrl(previousState.imageUrl);
+      if (previousState.videoUrl) setVideoUrl(previousState.videoUrl);
+      setTextAlign(previousState.textAlign || "left");
+      setFontSize([previousState.fontSize || 16]);
+      setIsbold(previousState.isBold || false);
+      setIsItalic(previousState.isItalic || false);
+      setTextColor(previousState.textColor || "#000000");
+      setBackgroundColor(previousState.backgroundColor || "#ffffff");
+      setTextVisible(previousState.textVisible !== false);
+      setBackgroundVisible(previousState.backgroundVisible !== false);
+      setVideoVisible(previousState.videoVisible !== false);
+      setHistoryIndex(historyIndex - 1);
+    }
+  };
+
+  // Redo function
+  const handleRedo = () => {
+    if (historyIndex < history.length - 1) {
+      const nextState = history[historyIndex + 1];
+      setCaption(nextState.caption);
+      setHashtags(nextState.hashtags);
+      setImageUrl(nextState.imageUrl);
+      if (nextState.videoUrl) setVideoUrl(nextState.videoUrl);
+      setTextAlign(nextState.textAlign || "left");
+      setFontSize([nextState.fontSize || 16]);
+      setIsbold(nextState.isBold || false);
+      setIsItalic(nextState.isItalic || false);
+      setTextColor(nextState.textColor || "#000000");
+      setBackgroundColor(nextState.backgroundColor || "#ffffff");
+      setTextVisible(nextState.textVisible !== false);
+      setBackgroundVisible(nextState.backgroundVisible !== false);
+      setVideoVisible(nextState.videoVisible !== false);
+      setHistoryIndex(historyIndex + 1);
+    }
+  };
+
   const [textColor, setTextColor] = useState("#000000");
   const [backgroundColor, setBackgroundColor] = useState("#ffffff");
   const [textVisible, setTextVisible] = useState(true);
   const [backgroundVisible, setBackgroundVisible] = useState(true);
+  const [videoVisible, setVideoVisible] = useState(true);
   const [imageUrl, setImageUrl] = useState("");
+  const [videoUrl, setVideoUrl] = useState("");
 
   const [brand, setBrand] = useState<Brand | null>(null);
   const [brandPresets, setBrandPresets] = useState<
@@ -116,6 +215,7 @@ export default function EditorPage() {
       setCaption(snap.caption);
       setHashtags(snap.hashtags || []);
       setImageUrl(snap.imageUrl);
+      if (snap.videoUrl) setVideoUrl(snap.videoUrl);
       if (snap.textAlign) setTextAlign(snap.textAlign);
       if (snap.fontSize) setFontSize([snap.fontSize]);
       if (snap.isBold !== undefined) setIsbold(snap.isBold);
@@ -125,6 +225,7 @@ export default function EditorPage() {
       if (snap.textVisible !== undefined) setTextVisible(snap.textVisible);
       if (snap.backgroundVisible !== undefined)
         setBackgroundVisible(snap.backgroundVisible);
+      if (snap.videoVisible !== undefined) setVideoVisible(snap.videoVisible);
     }
   }, [id]);
 
@@ -159,13 +260,51 @@ export default function EditorPage() {
       !hashtags.includes(newHashtag.trim()) &&
       hashtags.length < 30
     ) {
+      saveToHistory();
       setHashtags([...hashtags, newHashtag.trim()]);
       setNewHashtag("");
     }
   };
 
   const removeHashtag = (hashtag: string) => {
+    saveToHistory();
     setHashtags(hashtags.filter((h) => h !== hashtag));
+  };
+
+  // Wrapper functions for formatting changes that save to history
+  const handleTextAlignChange = (align: "left" | "center" | "right") => {
+    saveToHistory();
+    setTextAlign(align);
+  };
+
+  const handleBoldToggle = () => {
+    saveToHistory();
+    setIsbold(!isBold);
+  };
+
+  const handleItalicToggle = () => {
+    saveToHistory();
+    setIsItalic(!isItalic);
+  };
+
+  const handleFontSizeChange = (value: number[]) => {
+    saveToHistory();
+    setFontSize(value);
+  };
+
+  const handleTextColorChange = (color: string) => {
+    saveToHistory();
+    setTextColor(color);
+  };
+
+  const handleBackgroundColorChange = (color: string) => {
+    saveToHistory();
+    setBackgroundColor(color);
+  };
+
+  const handleVideoVisibilityToggle = () => {
+    saveToHistory();
+    setVideoVisible(!videoVisible);
   };
 
   const saveDraft = () => {
@@ -187,12 +326,15 @@ export default function EditorPage() {
         backgroundColor,
         textVisible,
         backgroundVisible,
+        videoVisible,
       };
       localStorage.setItem("libraryContent", JSON.stringify(items));
-      alert("Draft saved!");
-      window.location.href = "/library";
+      showToast("Draft saved!", "success");
+      setTimeout(() => {
+        window.location.href = "/library";
+      }, 1000);
     } else {
-      alert("Could not find this snap in library!");
+      showToast("Could not find this snap in library!", "error");
     }
   };
 
@@ -211,53 +353,58 @@ export default function EditorPage() {
       link.click();
     } catch (err) {
       console.error("Export failed", err);
-      alert("Failed to export image, please try again.");
+      showToast("Failed to export image, please try again.", "error");
     }
   };
 
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <main className="max-w-6xl mx-auto bg-white">
-        <header className="bg-white px-6 pt-4">
+    <div className="min-h-screen bg-background">
+      {/* Sticky Header */}
+      <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-50">
+        <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-gray-900 rounded-lg flex items-center justify-center">
-                <Sparkles className="w-5 h-5 text-white" />
+              <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
+                <Sparkles className="w-6 h-6 text-primary-foreground" />
               </div>
               <div>
-                <h1 className="font-semibold text-gray-900">Content Library</h1>
-                <p className="text-sm text-gray-500">Fine-tune your content</p>
+                <h1 className="text-xl font-black font-montserrat text-foreground">
+                  Content Editor
+                </h1>
+                <p className="text-sm text-muted-foreground">Fine-tune your content</p>
               </div>
             </div>
-            <nav className="flex items-center gap-8">
-              <a href="/dashboard" className="text-gray-900 font-medium">
-                DashBoard
-              </a>
-              <a href="/brand" className="text-gray-600 hover:text-gray-900">
-                Brand
-              </a>
-              <a href="/library" className="text-gray-600 hover:text-gray-900">
-                Library
-              </a>
-              <div className="flex items-center gap-2 text-gray-600">
-                <Type className="w-4 h-4" />
-                <span className="text-sm">EN</span>
-              </div>
-            </nav>
+            
+            <div className="flex items-center gap-2">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={handleUndo}
+                disabled={historyIndex <= 0}
+                className={historyIndex <= 0 ? "opacity-50 cursor-not-allowed" : ""}
+              >
+                <Undo className="w-4 h-4" />
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={handleRedo}
+                disabled={historyIndex >= history.length - 1}
+                className={historyIndex >= history.length - 1 ? "opacity-50 cursor-not-allowed" : ""}
+              >
+                <Redo className="w-4 h-4" />
+              </Button>
+              <Button variant="outline" size="sm" onClick={saveDraft}>
+                <Save className="w-4 h-4 mr-2" />
+                Save Draft
+              </Button>
+            </div>
           </div>
-          <div className="flex items-center justify-end gap-4 mt-4">
-            <Button variant="ghost" size="sm">
-              <Undo className="w-4 h-4" />
-            </Button>
-            <Button variant="ghost" size="sm">
-              <Redo className="w-4 h-4" />
-            </Button>
-            <Button variant="outline" size="sm" onClick={saveDraft}>
-              <Save className="w-4 h-4 mr-2" /> save draft
-            </Button>
-          </div>
-        </header>
+        </div>
+      </header>
+
+      <main className="max-w-6xl mx-auto bg-white">
         <div className="md:grid md:grid-cols-3 px-8 mx-auto">
           <div className="md:col-span-2 p-2 py-5">
             <Card className="bg-gray-100 overflow-hidden py-4 gap-2">
@@ -277,13 +424,23 @@ export default function EditorPage() {
                       : "#ffffff",
                   }}
                 >
-                  {backgroundVisible && imageUrl && (
+                  {backgroundVisible && imageUrl && !videoUrl && (
                     <Image
                       src={imageUrl}
                       alt="Preview"
                       width={300}
                       height={300}
                       className="w-full h-full object-cover"
+                    />
+                  )}
+
+                  {videoVisible && videoUrl && (
+                    <video
+                      src={videoUrl}
+                      className="w-full h-full object-cover"
+                      controls
+                      muted
+                      loop
                     />
                   )}
 
@@ -334,7 +491,7 @@ export default function EditorPage() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => setTextAlign("left")}
+                      onClick={() => handleTextAlignChange("left")}
                       className={textAlign === "left" ? "bg-muted" : ""}
                     >
                       <AlignLeft className="w-4 h-4" />
@@ -342,7 +499,7 @@ export default function EditorPage() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => setTextAlign("center")}
+                      onClick={() => handleTextAlignChange("center")}
                       className={textAlign === "center" ? "bg-muted" : ""}
                     >
                       <AlignCenter className="w-4 h-4" />
@@ -350,7 +507,7 @@ export default function EditorPage() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => setTextAlign("right")}
+                      onClick={() => handleTextAlignChange("right")}
                       className={textAlign === "right" ? "bg-muted" : ""}
                     >
                       <AlignRight className="w-4 h-4" />
@@ -358,7 +515,7 @@ export default function EditorPage() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => setIsbold(!isBold)}
+                      onClick={handleBoldToggle}
                       className={isBold ? "bg-muted" : ""}
                     >
                       <Bold className="w-4 h-4" />
@@ -366,7 +523,7 @@ export default function EditorPage() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => setIsItalic(!isItalic)}
+                      onClick={handleItalicToggle}
                       className={isItalic ? "bg-muted" : ""}
                     >
                       <Italic className="w-4 h-4" />
@@ -374,7 +531,10 @@ export default function EditorPage() {
                   </div>
                   <Textarea
                     value={caption}
-                    onChange={(e) => setCaption(e.target.value)}
+                    onChange={(e) => {
+                      saveToHistory();
+                      setCaption(e.target.value);
+                    }}
                     className="min-h-[80px] resize-none bg-gray-100"
                     placeholder="Write your caption here..."
                   />
@@ -448,7 +608,7 @@ export default function EditorPage() {
                     max={32}
                     step={1}
                     value={fontSize}
-                    onValueChange={setFontSize}
+                    onValueChange={handleFontSizeChange}
                     className="mt-2"
                   />
                 </div>
@@ -462,7 +622,7 @@ export default function EditorPage() {
                     <Input
                       type="text"
                       value={textColor}
-                      onChange={(e) => setTextColor(e.target.value)}
+                      onChange={(e) => handleTextColorChange(e.target.value)}
                       className="flex-1"
                     />
                   </div>
@@ -479,7 +639,7 @@ export default function EditorPage() {
                     <Input
                       type="text"
                       value={backgroundColor}
-                      onChange={(e) => setBackgroundColor(e.target.value)}
+                      onChange={(e) => handleBackgroundColorChange(e.target.value)}
                       className="flex-1"
                     />
                   </div>
@@ -502,8 +662,8 @@ export default function EditorPage() {
                         className="w-12 h-6 rounded cursor-pointer border border-gray-300"
                         style={{ backgroundColor: preset.color }}
                         onClick={() => {
-                          setBackgroundColor(preset.color);
-                          setTextColor(getContrastColor(preset.color));
+                          handleBackgroundColorChange(preset.color);
+                          handleTextColorChange(getContrastColor(preset.color));
                         }}
                         title={preset.name}
                       ></div>
@@ -554,6 +714,23 @@ export default function EditorPage() {
                       )}
                     </Button>
                   </div>
+
+                  {videoUrl && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm">Video</span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleVideoVisibilityToggle}
+                      >
+                        {videoVisible ? (
+                          <Eye className="w-4 h-4" />
+                        ) : (
+                          <EyeOff className="w-4 h-4" />
+                        )}
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -583,7 +760,11 @@ export default function EditorPage() {
         </div>
       </main>
 
+      {/* Toast Notifications */}
+      <Toast toast={toast} />
+
       {/* <Footer/> */}
     </div>
   );
 }
+

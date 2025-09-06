@@ -13,6 +13,8 @@ import { Label } from "@/components/label";
 import { Textarea } from "@/components/textarea";
 import { Badge } from "@/components/badge";
 import Header from "@/components/commonheader";
+import Toast from "@/components/Toast";
+import { ToastState } from "@/types/library";
 import {
   Select,
   SelectContent,
@@ -75,6 +77,20 @@ export default function BrandSetupPage() {
 
   const [newHashtag, setNewHashtag] = useState("");
 
+  const [toast, setToast] = useState<ToastState>({
+    show: false,
+    message: "",
+    type: "success",
+  });
+
+  const showToast = (message: string, type: "success" | "error") => {
+    setToast({ show: true, message, type });
+    setTimeout(
+      () => setToast({ show: false, message: "", type: "success" }),
+      3000
+    );
+  };
+
   const businessTypes = [
     { value: "cafe", label: "Café/Restaurant", icon: Coffee },
     { value: "retail", label: "Retail/Fashion", icon: ShoppingBag },
@@ -119,8 +135,10 @@ export default function BrandSetupPage() {
 
   const saveBrand = () => {
     localStorage.setItem("brandSetting", JSON.stringify(brandData));
-    alert("Brand saved successfully");
-    window.location.href = "/dashboard";
+    showToast("Brand saved successfully", "success");
+    setTimeout(() => {
+      window.location.href = "/dashboard";
+    }, 1000);
   };
 
   return (
@@ -494,6 +512,9 @@ export default function BrandSetupPage() {
           </div>
         </div>
       </div>
+
+      {/* Toast Notifications */}
+      <Toast toast={toast} />
     </div>
   );
 }

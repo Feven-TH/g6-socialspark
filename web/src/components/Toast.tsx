@@ -1,6 +1,6 @@
+import { useEffect, useState } from "react";
 import { Check, AlertTriangle } from "lucide-react";
 import { ToastState } from "@/types/library";
-import { useEffect, useState } from "react";
 
 interface ToastProps {
   toast: ToastState;

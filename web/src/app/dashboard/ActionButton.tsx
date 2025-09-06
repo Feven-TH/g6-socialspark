@@ -253,6 +253,8 @@ import { StoryboardShot } from "@/lib/types/api";
 import { useState } from "react";
 import { contentStorage } from "@/lib/utils/contentStorage";
 import { TitlePromptModal } from "./TitleModal";
+import Toast from "@/components/Toast";
+import { ToastState } from "@/types/library";
 
 interface ActionsProps {
   generatedContent: {
@@ -284,6 +286,20 @@ export default function Actions({
     "scheduler" | "editor" | "post" | "library"
   >("library");
 
+  const [toast, setToast] = useState<ToastState>({
+    show: false,
+    message: "",
+    type: "success",
+  });
+
+  const showToast = (message: string, type: "success" | "error") => {
+    setToast({ show: true, message, type });
+    setTimeout(
+      () => setToast({ show: false, message: "", type: "success" }),
+      3000
+    );
+  };
+
   const handleExport = async () => {
     setIsExporting(true);
     try {
@@ -296,7 +312,7 @@ export default function Actions({
       }
     } catch (error) {
       console.error("Export failed:", error);
-      alert("Failed to export content. Please try again.");
+      showToast("Failed to export content. Please try again.", "error");
     } finally {
       setIsExporting(false);
     }
@@ -434,14 +450,14 @@ Shot ${index + 1}:
 
       if (route === "library") {
         id = contentStorage.saveToLibrary(contentData);
-        alert("Content saved to library successfully!");
+        showToast("Content saved to library successfully!", "success");
       } else {
         id = contentStorage.saveContent(`${route}Content`, contentData);
         router.push(`/${route}/${id}`);
       }
     } catch (error) {
       console.error(`Failed to save for ${route}:`, error);
-      alert(`Failed to save content. Please try again.`);
+      showToast(`Failed to save content. Please try again.`, "error");
     }
   };
 
@@ -529,6 +545,9 @@ Shot ${index + 1}:
         onSave={(title) => handleSaveWithTitle(title, savingRoute)}
         defaultTitle={generatedContent.caption.split(" ").slice(0, 6).join(" ")}
       />
+
+      {/* Toast Notifications */}
+      <Toast toast={toast} />
     </>
   );
 }
