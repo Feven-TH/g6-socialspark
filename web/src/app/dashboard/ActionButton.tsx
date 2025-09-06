@@ -8,6 +8,7 @@ import { contentStorage } from "@/lib/utils/contentStorage";
 import { TitlePromptModal } from "./TitleModal";
 import Toast from "@/components/Toast";
 import { ToastState } from "@/types/library";
+import libraryService from "@/services/libraryService";
 
 interface ActionsProps {
   generatedContent: {
@@ -52,6 +53,7 @@ export default function Actions({
       3000
     );
   };
+
   const handleExport = () => {
     setIsExporting(true);
     try {
@@ -77,9 +79,9 @@ export default function Actions({
       setIsExporting(false);
     }
   };
+
   const exportAsFile = (fileUrl: string, extension: "png" | "mp4") => {
     try {
-      // Create a direct download link without using fetch
       const link = document.createElement("a");
       link.href = fileUrl;
 
@@ -96,11 +98,11 @@ export default function Actions({
       document.body.removeChild(link);
     } catch (error) {
       console.error("File export error:", error);
-      // Fallback: open in new tab
       window.open(fileUrl, "_blank");
       throw new Error("Failed to download. Opened in new tab instead.");
     }
   };
+
   const exportAsText = () => {
     const content = `
 SOCIAL MEDIA CONTENT
@@ -143,19 +145,44 @@ Shot ${index + 1}:
     setTimeout(() => URL.revokeObjectURL(url), 100);
   };
 
-  const handleSaveWithTitle = (
+  const handleSaveWithTitle = async (
     title: string,
     route: "scheduler" | "editor" | "post" | "library"
   ) => {
     try {
-      const contentData = {
+      // Create data for contentStorage (uses contentType)
+      const contentStorageData = {
         caption: generatedContent.caption,
         hashtags: generatedContent.hashtags,
         imageUrl: generatedContent.imageUrl,
         videoUrl: generatedContent.videoUrl,
         platform,
-        contentType,
+        contentType: contentType,
         title: title.trim(),
+        ...(contentType === "video" && {
+          storyboard: generatedContent.storyboard,
+          overlays: generatedContent.overlays,
+        }),
+      };
+
+      // Create data for libraryService (needs type, status, engagement)
+      const libraryServiceData = {
+        id: Date.now().toString(),
+        caption: generatedContent.caption,
+        hashtags: generatedContent.hashtags,
+        imageUrl: generatedContent.imageUrl || "",
+        videoUrl: generatedContent.videoUrl || "",
+        platform,
+        type: contentType,
+        contentType: contentType,
+        title: title.trim(),
+        createdAt: new Date().toISOString(),
+        status: "draft",
+        engagement: {
+          likes: 0,
+          comments: 0,
+          views: 0,
+        },
         ...(contentType === "video" && {
           storyboard: generatedContent.storyboard,
           overlays: generatedContent.overlays,
@@ -165,17 +192,30 @@ Shot ${index + 1}:
       let id: string;
 
       if (route === "library") {
-        id = contentStorage.saveToLibrary(contentData);
+        // Use contentStorage for library
+        id = contentStorage.saveToLibrary(contentStorageData);
         showToast("Content saved to library successfully!", "success");
+      } else if (route === "post") {
+        // Use libraryService only for post route
+        const currentContent = await libraryService.getLibraryContent();
+        const updatedContent = [...currentContent, libraryServiceData];
+        await libraryService.saveLibraryContent(updatedContent);
+        id = libraryServiceData.id;
+        showToast("Content saved successfully!", "success");
       } else {
-        // Map route to the correct storage key
+        // Use contentStorage for scheduler and editor
         const storageKeyMap = {
           scheduler: "schedulerContent" as const,
           editor: "editorContent" as const,
-          post: "postContent" as const,
         };
+        id = contentStorage.saveContent(
+          storageKeyMap[route],
+          contentStorageData
+        );
+      }
 
-        id = contentStorage.saveContent(storageKeyMap[route], contentData);
+      // Navigate to the specific route
+      if (route !== "library") {
         router.push(`/${route}/${id}`);
       }
     } catch (error) {
@@ -251,13 +291,6 @@ Shot ${index + 1}:
               <ImageIcon className="w-4 h-4 mr-2" />
               {t.post}
             </Button>
-            <Button
-              variant="outline"
-              onClick={() => handleSaveAndNavigate("editor")}
-            >
-              <ImageIcon className="w-4 h-4 mr-2" />
-              {t.edit}
-            </Button>
           </>
         )}
       </div>
@@ -269,7 +302,6 @@ Shot ${index + 1}:
         defaultTitle={generatedContent.caption.split(" ").slice(0, 6).join(" ")}
       />
 
-      {/* Toast Notifications */}
       <Toast toast={toast} />
     </>
   );
