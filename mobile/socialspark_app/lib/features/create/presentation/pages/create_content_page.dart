@@ -299,7 +299,24 @@ class _CreateContentPageState extends State<CreateContentPage> {
                     icon: const Icon(Icons.outbox),
                     label: const Text('Export')),
                 OutlinedButton.icon(
-                    onPressed: () {},
+                    onPressed: () {
+                      final content = _isVideoType
+                          ? _videoKey.currentState?.getGeneratedContent()
+                          : _imageKey.currentState?.getGeneratedContent();
+                      if (content != null) {
+                        context.push('/scheduler', extra: {
+                          'mediaUrl': content['url'],
+                          'type': _isVideoType ? 'video' : 'image',
+                          'caption': _captionCtrl.text,
+                          'hashtags': _hashtags,
+                        });
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                              content: Text('Please generate content first')),
+                        );
+                      }
+                    },
                     icon: const Icon(Icons.schedule),
                     label: const Text('Schedule')),
                 OutlinedButton.icon(

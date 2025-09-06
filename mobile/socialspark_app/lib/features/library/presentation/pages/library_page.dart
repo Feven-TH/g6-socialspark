@@ -4,6 +4,7 @@ import 'package:socialspark_app/core/widgets/main_scaffold.dart';
 import 'package:socialspark_app/features/scheduling/presentation/pages/scheduler_page.dart';
 import 'package:socialspark_app/features/library/data/datasources/library_local_ds.dart';
 import 'package:socialspark_app/features/library/data/models/library_item.dart';
+import 'package:socialspark_app/features/editor/domain/entities/content.dart';
 
 class LibraryPage extends StatefulWidget {
   const LibraryPage({super.key});
@@ -223,6 +224,31 @@ class _ContentCard extends StatefulWidget {
 class _ContentCardState extends State<_ContentCard> {
   bool _isHovering = false;
 
+  Widget _buildHoverButton({
+    required IconData icon,
+    required String label,
+    required VoidCallback onPressed,
+  }) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        IconButton(
+          icon: Icon(icon, size: 32, color: Colors.white),
+          onPressed: onPressed,
+        ),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 12,
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Card(
@@ -310,17 +336,28 @@ class _ContentCardState extends State<_ContentCard> {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            IconButton(
-                              icon: const Icon(Icons.schedule, size: 40, color: Colors.white),
-                              onPressed: widget.onSchedule,
-                            ),
-                            const SizedBox(height: 8),
-                            const Text(
-                              'Schedule Post',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                              ),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                _buildHoverButton(
+                                  icon: Icons.schedule,
+                                  label: 'Schedule',
+                                  onPressed: widget.onSchedule,
+                                ),
+                                const SizedBox(width: 20),
+                                _buildHoverButton(
+                                  icon: Icons.edit,
+                                  label: 'Edit',
+                                  onPressed: () {
+                                    context.push(
+                                      '/editor',
+                                      extra: {
+                                        'item': widget.item,
+                                      },
+                                    );
+                                  },
+                                ),
+                              ],
                             ),
                           ],
                         ),
