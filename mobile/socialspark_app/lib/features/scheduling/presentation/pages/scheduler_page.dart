@@ -75,7 +75,8 @@ class _SchedulerPageState extends State<SchedulerPage> {
   @override
   Widget build(BuildContext context) {
     return MainScaffold(
-      showBottomNav: false, // Hide the main bottom nav
+      currentIndex: 0, // Set to the appropriate index for this page
+      // showBottomNav: false, // Hide the main bottom nav
       child: Column(
         children: [
           // Custom app bar

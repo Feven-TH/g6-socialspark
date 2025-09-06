@@ -1,3 +1,4 @@
+
 import 'dart:async';
 import 'package:flutter/foundation.dart' as foundation;
 import 'package:dio/dio.dart';
@@ -142,7 +143,7 @@ class ImageGenerationSectionState extends State<ImageGenerationSection> {
         final dir = await getApplicationDocumentsDirectory();
         final filename = 'socialspark_image_${DateTime.now().millisecondsSinceEpoch}.png';
         final savePath = '${dir.path}/$filename';
-
+        
         await dio.download(url, savePath);
 
         if (!mounted) return;
