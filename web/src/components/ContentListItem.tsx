@@ -37,7 +37,6 @@ export default function ContentListItem({
   copiedId,
   onExport,
   onCopy,
-  onCopyHashtags,
   onEdit,
   onSchedule,
   onDelete,
@@ -51,7 +50,7 @@ export default function ContentListItem({
       : "draft";
 
   return (
-    <Card>
+    <Card className="group hover:shadow-lg transition-shadow bg-[#D9D9D9]/[0.72]">
       <CardContent className="p-4 sm:p-6">
         <div className="flex flex-col sm:flex-row sm:items-start gap-4">
           {/* Image or Video */}
@@ -91,10 +90,10 @@ export default function ContentListItem({
               <Badge
                 variant={
                   displayStatus === "published"
-                    ? "default"
+                    ? "outline"
                     : displayStatus === "scheduled"
                     ? "secondary"
-                    : "outline"
+                    : "default"
                 }
                 className="self-start sm:self-center text-xs sm:text-sm"
               >

@@ -9,6 +9,7 @@ import Toast from "@/components/Toast";
 import { useSchedulePostMutation } from "@/lib/redux/services/api";
 import type { ToastState, LibraryItem } from "@/types/library";
 import libraryService from "@/services/libraryService";
+import { ArrowLeft } from "lucide-react";
 
 const PLATFORMS = ["instagram", "pinterest"] as const;
 
@@ -45,7 +46,8 @@ export default function PostSchedulePage() {
         const fetched = await libraryService.getLibraryItem(id);
         if (fetched) {
           setItem(fetched);
-          if (!postText) setPostText(fetched.caption || "");
+          if (!postText)
+            setPostText(fetched.caption + fetched.hashtags.join("") || "");
         }
       } catch {
         // ignore; form remains usable
@@ -151,11 +153,14 @@ export default function PostSchedulePage() {
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8 max-w-3xl">
-        <div className="mb-4">
-          <Button variant="outline" onClick={() => router.push("/library")}>
-            Back to Library
-          </Button>
-        </div>
+        <button
+          onClick={() => router.push("/library")}
+          className="flex items-center gap-2 mb-4 text-sm text-primary font-medium hover:text-accent transition"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back to Library
+        </button>
+
         <Card className="bg-[#D9D9D9]/[0.72]">
           <CardHeader>
             <CardTitle className="text-xl">Post or Schedule</CardTitle>

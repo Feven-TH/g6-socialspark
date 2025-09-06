@@ -1,23 +1,24 @@
-"use client"
+"use client";
 
-import React, { useState } from "react"
-import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { Sparkles, Languages } from "lucide-react"
+import React, { useState } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { Sparkles, Languages, Menu, X } from "lucide-react";
 
 const Header = () => {
-  const pathname = usePathname()
-  const [lang, setLang] = useState<"EN" | "አማ">("EN")
+  const pathname = usePathname();
+  const [lang, setLang] = useState<"EN" | "አማ">("EN");
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   const links = [
-    { href: "/dashboard", label: lang === "EN" ? "Dashboard" : "ዳሽቦርድ" },
+    { href: "/dashboard", label: lang === "EN" ? "Create Content" : "ዳሽቦርድ" },
     { href: "/Brand", label: lang === "EN" ? "Brand" : "ብራንድ" },
     { href: "/library", label: lang === "EN" ? "Library" : "ቤተ-መጻህፍት" },
-  ]
+  ];
 
   const toggleLang = () => {
-    setLang((prev) => (prev === "EN" ? "አማ" : "EN"))
-  }
+    setLang((prev) => (prev === "EN" ? "አማ" : "EN"));
+  };
 
   return (
     <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-50">
@@ -40,13 +41,13 @@ const Header = () => {
             </div>
           </div>
 
-          {/* Navigation */}
-          <nav className="flex items-center gap-6 font-medium">
+          {/* Desktop Navigation */}
+          <nav className="hidden md:flex items-center gap-6 font-medium">
             {links.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
-                className={`hover:text-primary ${
+                className={`transition transform hover:scale-105 hover:text-accent ${
                   pathname === link.href
                     ? "underline underline-offset-4 text-primary font-semibold"
                     : ""
@@ -59,16 +60,58 @@ const Header = () => {
             {/* Language toggle */}
             <button
               onClick={toggleLang}
-              className="flex items-center gap-1 cursor-pointer"
+              className="flex items-center gap-1 cursor-pointer transition transform hover:scale-105 hover:text-accent"
             >
               <Languages className="w-4 h-4" />
               <span>{lang}</span>
             </button>
           </nav>
+
+          {/* Mobile Menu Button */}
+          <button
+            className="md:hidden"
+            onClick={() => setMobileOpen(!mobileOpen)}
+          >
+            {mobileOpen ? (
+              <X className="w-6 h-6" />
+            ) : (
+              <Menu className="w-6 h-6" />
+            )}
+          </button>
         </div>
+
+        {/* Mobile Dropdown */}
+        {mobileOpen && (
+          <div className="mt-4 flex flex-col gap-4 md:hidden">
+            {links.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                onClick={() => setMobileOpen(false)}
+                className={`transition transform hover:scale-105 hover:text-accent ${
+                  pathname === link.href
+                    ? "underline underline-offset-4 text-primary font-semibold"
+                    : ""
+                }`}
+              >
+                {link.label}
+              </Link>
+            ))}
+            <button
+              onClick={() => {
+                toggleLang();
+                setMobileOpen(false);
+              }}
+              className="flex items-center gap-1 cursor-pointer transition transform hover:scale-105 hover:text-accent"
+            >
+              <Languages className="w-4 h-4" />
+              <span>{lang}</span>
+            </button>
+          </div>
+        )}
       </div>
     </header>
-  )
-}
+  );
+};
 
-export default Header
+export default Header;

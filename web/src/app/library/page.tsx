@@ -1,5 +1,4 @@
 "use client";
-import Header from "@/components/commonheader";
 import SearchAndFilters from "@/components/SearchAndFilters";
 import ContentCard from "@/components/ContentCard";
 import ContentListItem from "@/components/ContentListItem";
@@ -9,6 +8,7 @@ import EmptyState from "@/components/EmptyState";
 import { useLibrary } from "@/hooks/useLibrary";
 import { Sparkles } from "lucide-react";
 import { Button } from "@/components/button";
+import Header from "@/components/commonheader";
 
 export default function LibraryPage() {
   const {
@@ -32,33 +32,18 @@ export default function LibraryPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
-                <Sparkles className="w-6 h-6 text-primary-foreground" />
-              </div>
-              <div>
-                <h1 className="text-xl font-black font-montserrat text-foreground">
-                  Content Library
-                </h1>
-                <p className="text-sm text-muted-foreground">
-                  Manage your created content
-                </p>
-              </div>
-            </div>
+      <Header />
 
-            <Button asChild>
-              <a href="/dashboard">
-                <Sparkles className="w-4 h-4 mr-2" />
-                Create New
-              </a>
-            </Button>
-          </div>
+      {filteredContent.length > 0 && (
+        <div className="container mx-auto px-4 py-4 flex justify-end">
+          <Button asChild>
+            <a href="/dashboard">
+              <Sparkles className="w-4 h-4 mr-2" />
+              Create New
+            </a>
+          </Button>
         </div>
-      </header>
+      )}
 
       <div className="container mx-auto px-4 py-8">
         {/* Filters and Search */}
