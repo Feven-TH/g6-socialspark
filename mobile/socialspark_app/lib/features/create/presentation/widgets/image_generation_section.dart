@@ -1,7 +1,9 @@
-
 import 'dart:async';
-
+import 'package:flutter/foundation.dart' as foundation;
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/network/api_client.dart';
 import '../../data/datasources/create_remote_ds.dart';
@@ -34,6 +36,7 @@ class ImageGenerationSectionState extends State<ImageGenerationSection> {
   TaskStatus? _status;
   String? _error;
   bool _loading = false;
+  bool _downloading = false;
 
   String get _aspectRatio => widget.initialPlatform == 'tiktok' ? '9:16' : '1:1';
 
@@ -129,6 +132,42 @@ class ImageGenerationSectionState extends State<ImageGenerationSection> {
     return status;
   }
 
+  Future<void> _downloadImage(String url) async {
+    setState(() => _downloading = true);
+    try {
+      if (foundation.kIsWeb) {
+        await launchUrl(Uri.parse(url), webOnlyWindowName: '_blank');
+      } else {
+        final dio = Dio();
+        final dir = await getApplicationDocumentsDirectory();
+        final filename = 'socialspark_image_${DateTime.now().millisecondsSinceEpoch}.png';
+        final savePath = '${dir.path}/$filename';
+
+        await dio.download(url, savePath);
+
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Image saved to $savePath'),
+            action: SnackBarAction(
+              label: 'Open',
+              onPressed: () => launchUrl(Uri.file(savePath)),
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error downloading image: $e')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _downloading = false);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final status = _status;
@@ -144,17 +183,30 @@ class ImageGenerationSectionState extends State<ImageGenerationSection> {
           Text('Status: ${status.status}', style: const TextStyle(fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
           if (url != null && url.isNotEmpty)
-            ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: Image.network(
-                url,
-                width: 260,
-                height: 260,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => _imgFallback(),
-              ),
+            Column(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Image.network(
+                    url,
+                    width: 260,
+                    height: 260,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => _imgFallback(),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                if (_downloading)
+                  const CircularProgressIndicator()
+                else
+                  ElevatedButton.icon(
+                    onPressed: () => _downloadImage(url),
+                    icon: const Icon(Icons.download),
+                    label: const Text('Download'),
+                  ),
+              ],
             )
-          else if (status.status.toLowerCase() != 'completed')
+          else
             _imgFallback(),
         ],
       ],
