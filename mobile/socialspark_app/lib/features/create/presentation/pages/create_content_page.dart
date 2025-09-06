@@ -332,7 +332,7 @@ class _CreateContentPageState extends State<CreateContentPage> {
             ] else ...[
               const SizedBox(height: 24),
               Divider(color: Colors.grey.shade300, height: 1),
-              const SizedBox(height: 16),
+              const SizedBox(height:.16),
               Text('Image Generation',
                   style: Theme.of(context)
                       .textTheme
@@ -350,7 +350,7 @@ class _CreateContentPageState extends State<CreateContentPage> {
                 },
               ),
             ],
-            const SizedBox(height: 32),
+            const SizedBox(height: 16), // Reduced from 32
           ],
         ),
       ),
