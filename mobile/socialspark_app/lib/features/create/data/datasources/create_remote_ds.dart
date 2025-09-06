@@ -131,8 +131,15 @@ class CreateRemoteDataSource {
 
     final raw = _coerceJsonMap(resp.data);
     final status = (raw['status'] ?? '').toString();
-    final url = (raw['image_url'] ?? raw['url'])?.toString();
     final error = raw['error']?.toString();
+
+    String? url;
+    final videoUrlData = raw['video_url'];
+    if (videoUrlData != null) {
+      final videoUrlMap = _coerceJsonMap(videoUrlData);
+      url = videoUrlMap['image_url']?.toString();
+    }
+    url ??= (raw['image_url'] ?? raw['url'])?.toString();
 
     return TaskStatus(id: id, status: status, url: url, error: error);
   }
