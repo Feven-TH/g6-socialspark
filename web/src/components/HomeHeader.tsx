@@ -1,10 +1,19 @@
 "use client";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { Button } from "./button";
 import { Sparkles } from "lucide-react";
+import { Brand } from "@/app/types/common";
 
 const Header = () => {
+  const [brand, setBrand] = useState<Brand | null>(null);
+
+  useEffect(() => {
+    const brandData = localStorage.getItem("brandSetting");
+    if (brandData) {
+      setBrand(JSON.parse(brandData));
+    }
+  }, []);
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-white/90 backdrop-blur-md">
       <div className="max-w-6xl mx-auto flex items-center justify-between px-6 py-4">
@@ -39,10 +48,14 @@ const Header = () => {
 
           {/* Always show Get started */}
           <Button
-            asChild
+            onClick={() =>
+              brand
+                ? (window.location.href = "/library")
+                : (window.location.href = "/Brand")
+            }
             className="bg-[#FBBF24] text-[#0D2A4B] hover:bg-[#facc15] rounded-lg px-4 py-2 font-semibold"
           >
-            <Link href="/library">Get started</Link>
+            Get started
           </Button>
         </nav>
       </div>

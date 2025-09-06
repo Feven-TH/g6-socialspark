@@ -8,11 +8,11 @@ const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
       // Allow images from localhost:9000/videos
-      {
-        protocol: "https",
-        hostname: "a223539ccf6caa2d76459c9727d276e6.r2.cloudflarestorage.com", // your cloudflare storage domain
-        pathname: "/**",
-      },
+      // {
+      //   protocol: "https",
+      //   hostname: "a223539ccf6caa2d76459c9727d276e6.r2.cloudflarestorage.com", // your cloudflare storage domain
+      //   pathname: "/**",
+      // },
       {
         protocol: "http",
         hostname: "localhost", // local backend

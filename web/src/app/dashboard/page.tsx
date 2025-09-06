@@ -35,6 +35,7 @@ import {
   Type,
   Play,
   AlertCircle,
+  Globe,
 } from "lucide-react";
 
 import {
@@ -231,8 +232,8 @@ export default function Dashboard() {
       exampleBeauty: "Beauty tip video for natural skincare routine",
     },
     am: {
-      edit: "",
-      post: "",
+      edit: "አቀናባሪ",
+      post: "ላክ",
       title: "ሶሻል ስፓርክ",
       subtitle: "ለኢትዮጵያ አነስተኛ ንግዶች AI የይዘት ፈጠራ መሳሪያ",
       ideaPlaceholder: 'የይዘት ሀሳብዎን ይግለጹ... ለምሳሌ "ለካፌዬ አዲስ ላቴ አዝናኝ ቲክቶክ"',
@@ -282,7 +283,7 @@ export default function Dashboard() {
       const captionResponse = await generateCaption({
         idea,
         platform,
-        language: "amharic",
+        language,
         hashtags_count: 6,
         brand_presets: {
           name: brand.businessName || "",
@@ -503,26 +504,36 @@ export default function Dashboard() {
                 </div>
 
                 <div className="grid grid-cols-3 gap-4">
+                  {/* Language Selector */}
                   <div>
                     <label className="text-sm font-medium mb-2 block">
-                      Business Type
+                      Language
                     </label>
                     <Select
-                      value={businessType}
-                      onValueChange={setBusinessType}
+                      value={language}
+                      onValueChange={(value) => setLanguage(value)}
                     >
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="cafe">Café</SelectItem>
-                        <SelectItem value="retail">Retail</SelectItem>
-                        <SelectItem value="salon">Salon</SelectItem>
-                        <SelectItem value="photography">Photography</SelectItem>
+                        <SelectItem value="en">
+                          <div className="flex items-center gap-2">
+                            <Globe className="w-4 h-4" />
+                            English
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="am">
+                          <div className="flex items-center gap-2">
+                            <Globe className="w-4 h-4" />
+                            Amharic
+                          </div>
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
 
+                  {/* Platform Selector */}
                   <div>
                     <label className="text-sm font-medium mb-2 block">
                       Platform
@@ -548,6 +559,7 @@ export default function Dashboard() {
                     </Select>
                   </div>
 
+                  {/* Content Type Selector */}
                   <div>
                     <label className="text-sm font-medium mb-2 block">
                       Content Type
@@ -573,7 +585,6 @@ export default function Dashboard() {
                     </Select>
                   </div>
                 </div>
-
                 <div>
                   <label className="text-sm font-medium mb-2 block">Tone</label>
                   <div className="flex flex-wrap gap-2">
@@ -724,7 +735,7 @@ export default function Dashboard() {
                                         <ImageIcon className="w-10 h-10 text-red-500" />
                                       </div>
                                       <p className="text-sm font-medium text-red-500">
-                                        {getImageStatusMessage()}
+                                        Image failed - try again
                                       </p>
                                     </>
                                   ) : (
@@ -802,7 +813,7 @@ export default function Dashboard() {
                                         <Video className="w-10 h-10 text-red-500" />
                                       </div>
                                       <p className="text-sm font-medium text-red-500">
-                                        {getVideoStatusMessage()}
+                                        Video failed - try again
                                       </p>
                                     </>
                                   ) : (
