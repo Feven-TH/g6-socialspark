@@ -9,6 +9,7 @@ import '../../../create/data/models/brand_preset.dart';
 import '../../../create/data/models/requests.dart';
 import '../../../create/data/models/task_status.dart';
 import '../widgets/video_generation_section.dart';
+import '../widgets/image_generation_section.dart';
 
 class CreateContentPage extends StatefulWidget {
   const CreateContentPage({super.key});
@@ -39,6 +40,8 @@ class _CreateContentPageState extends State<CreateContentPage> {
   // Typed key to call child's public start()
   final GlobalKey<VideoGenerationSectionState> _videoKey =
       GlobalKey<VideoGenerationSectionState>();
+  final GlobalKey<ImageGenerationSectionState> _imageKey =
+      GlobalKey<ImageGenerationSectionState>();
 
   bool get _isVideoType =>
       _ctype.contains('video') || _ctype.contains('story') || _ctype.contains('reel');
@@ -47,7 +50,7 @@ class _CreateContentPageState extends State<CreateContentPage> {
   void initState() {
     super.initState();
     _ds = CreateRemoteDataSource(ApiClient());
-    _ideaCtrl.text = '15s TikTok for wildlife conservation ad';
+    _ideaCtrl.text = 'A man having a coffee at a cafe';
     _ctaCtrl.text = 'call and reserve';
   }
 
@@ -77,11 +80,10 @@ class _CreateContentPageState extends State<CreateContentPage> {
     setState(() {
       _loading = true;
       _error = null;
-      if (!_isVideoType) _imageUrl = null; // image flow will set preview
     });
 
     final idea = _ideaCtrl.text.trim().isEmpty
-        ? "15s TikTok for wildlife conservation ad"
+        ? "A man having a coffee at a cafe"
         : _ideaCtrl.text.trim();
 
     try {
@@ -94,56 +96,19 @@ class _CreateContentPageState extends State<CreateContentPage> {
         ),
       );
 
-      if (_isVideoType) {
-        // Show the section and auto-start it
-        setState(() {
-          _captionCtrl.text = caption;
-          _loading = false;
-        });
+      // Show the section and auto-start it
+      setState(() {
+        _captionCtrl.text = caption;
+        _loading = false;
+      });
 
-        WidgetsBinding.instance.addPostFrameCallback((_) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_isVideoType) {
           _videoKey.currentState?.start();
-        });
-        return;
-      }
-
-      // ------------------------ IMAGE FLOW ------------------------
-      final generatedPrompt = await _ds.startImageGeneration(
-        ImageGenerationRequest(
-          prompt: idea,
-          style: "realistic",
-          aspectRatio: _aspectForPlatform(video: false),
-          brandPresets: _brand(),
-          platform: _platform,
-        ),
-      );
-
-      final renderTaskId = await _ds.startImageRender(
-        promptUsed: generatedPrompt,
-        style: "realistic",
-        aspectRatio: _aspectForPlatform(video: false),
-        platform: _platform,
-      );
-
-      final TaskStatus status = await _pollTaskUntilDone(
-        renderTaskId,
-        fetch: _ds.getImageStatus,
-        timeout: const Duration(minutes: 5),
-        interval: const Duration(seconds: 2),
-      );
-
-      final s = status.status.trim().toUpperCase();
-      if (s == 'SUCCESS' || s == 'SUCCEEDED' || s == 'READY') {
-        final url = status.url;
-        if (url == null || url.isEmpty) throw Exception("Image success but no URL");
-        setState(() {
-          _captionCtrl.text = caption;
-          _imageUrl = url;
-          _loading = false;
-        });
-      } else {
-        throw Exception(status.error ?? "Image render failed (status=$s)");
-      }
+        } else {
+          _imageKey.currentState?.start();
+        }
+      });
     } catch (e) {
       setState(() {
         _loading = false;
@@ -161,27 +126,6 @@ class _CreateContentPageState extends State<CreateContentPage> {
       return e.message ?? e.toString();
     }
     return e.toString();
-  }
-
-  Future<TaskStatus> _pollTaskUntilDone(
-    String taskId, {
-    required Future<TaskStatus> Function(String id) fetch,
-    Duration timeout = const Duration(minutes: 10),
-    Duration interval = const Duration(seconds: 2),
-  }) async {
-    final deadline = DateTime.now().add(timeout);
-    TaskStatus status = await fetch(taskId);
-
-    while (mounted) {
-      final s = status.status.trim().toUpperCase();
-      if (s == 'READY' || s == 'FAILED' || s == 'SUCCESS' || s == 'SUCCEEDED') break;
-      if (DateTime.now().isAfter(deadline)) {
-        throw Exception("Timed out waiting for task $taskId");
-      }
-      await Future.delayed(interval);
-      status = await fetch(taskId);
-    }
-    return status;
   }
 
   Future<void> _exportClipboard() async {
@@ -311,7 +255,7 @@ class _CreateContentPageState extends State<CreateContentPage> {
             child: FilledButton.icon(
               icon: const Icon(Icons.auto_awesome),
               label: Text(_loading
-                  ? (_isVideoType ? 'Starting video…' : 'Generating…')
+                  ? 'Generating…'
                   : (_isVideoType ? 'Generate (video)' : 'Generate (image)')),
               onPressed: _loading ? null : _generateAll,
             ),
@@ -327,8 +271,7 @@ class _CreateContentPageState extends State<CreateContentPage> {
             const Center(child: CircularProgressIndicator()),
           ],
 
-          if (!_loading &&
-              (_captionCtrl.text.isNotEmpty || _imageUrl != null)) ...[
+          if (!_loading && _captionCtrl.text.isNotEmpty) ...[
             const SizedBox(height: 16),
             Text('Generated Content',
                 style: Theme.of(context)
@@ -359,28 +302,6 @@ class _CreateContentPageState extends State<CreateContentPage> {
                 runSpacing: 8,
                 children:
                     _hashtags.map((h) => Chip(label: Text('#$h'))).toList()),
-            const SizedBox(height: 12),
-
-            // Image preview only for image flow
-            if (!_isVideoType) ...[
-              const Text('Preview',
-                  style: TextStyle(fontWeight: FontWeight.w600)),
-              const SizedBox(height: 8),
-              if (_imageUrl != null && _imageUrl!.startsWith('http'))
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: Image.network(
-                    _imageUrl!,
-                    width: 260,
-                    height: 260,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => _imgFallback(),
-                  ),
-                )
-              else
-                _imgFallback(),
-            ],
-
             const SizedBox(height: 16),
             Wrap(spacing: 12, runSpacing: 12, children: [
               OutlinedButton.icon(
@@ -402,7 +323,6 @@ class _CreateContentPageState extends State<CreateContentPage> {
             ]),
           ],
 
-          // VIDEO SECTION (auto-starts after pressing the top Generate)
           if (_isVideoType) ...[
             const SizedBox(height: 24),
             Divider(color: Colors.grey.shade300, height: 1),
@@ -413,7 +333,6 @@ class _CreateContentPageState extends State<CreateContentPage> {
                     .titleLarge
                     ?.copyWith(fontWeight: FontWeight.w700)),
             const SizedBox(height: 8),
-
             VideoGenerationSection(
               key: _videoKey,
               initialIdea: _ideaCtrl.text,
@@ -426,20 +345,32 @@ class _CreateContentPageState extends State<CreateContentPage> {
                 );
               },
             ),
+          ] else ...[
+            const SizedBox(height: 24),
+            Divider(color: Colors.grey.shade300, height: 1),
+            const SizedBox(height: 16),
+            Text('Image Generation',
+                style: Theme.of(context)
+                    .textTheme
+                    .titleLarge
+                    ?.copyWith(fontWeight: FontWeight.w700)),
+            const SizedBox(height: 8),
+            ImageGenerationSection(
+              key: _imageKey,
+              initialIdea: _ideaCtrl.text,
+              initialPlatform: _platform,
+              brandPreset: _brand(),
+              onImageReady: (url, taskId) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Image ready (task $taskId)')),
+                );
+                setState(() => _imageUrl = url);
+              },
+            ),
           ],
-
           const SizedBox(height: 32),
         ],
       ),
     );
   }
-
-  Widget _imgFallback() => Container(
-        width: 260,
-        height: 260,
-        decoration: BoxDecoration(
-            color: Colors.grey.shade300,
-            borderRadius: BorderRadius.circular(12)),
-        child: const Icon(Icons.image, size: 48),
-      );
 }
