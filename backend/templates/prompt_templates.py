@@ -10,7 +10,7 @@ The color pallete for the brand is {colors}.
 The platform is {platform}.
 The call to action is {cta}.
 
-Generate a list of shots, where each shot has a duration, a short searchable phrase to find a good shot from pixaby (1 - 2 words only), and a suggestion for the background music genre. Do not ever write a phrase with more than two words or connected with hyphen. The phrase should has either one word or two space separated words only.
+Generate a list of shots, where each shot has a duration, a short searchable word to find a good shot from pixaby (1 word only), and a suggestion for the background music genre. Do not ever write a phrase with more than two words connected with hyphen. The phrase should have only one word.
 """
 
 Caption_PROMPT_TEMPLATE = """
