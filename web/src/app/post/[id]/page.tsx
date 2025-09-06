@@ -10,6 +10,7 @@ import { useSchedulePostMutation } from "@/lib/redux/services/api";
 import type { ToastState, LibraryItem } from "@/types/library";
 import libraryService from "@/services/libraryService";
 import { ArrowLeft } from "lucide-react";
+import { contentStorage } from "@/lib/utils/contentStorage";
 
 const PLATFORMS = ["instagram", "pinterest"] as const;
 
@@ -40,21 +41,40 @@ export default function PostSchedulePage() {
   useEffect(() => {
     const load = async () => {
       const id = Array.isArray(params?.id) ? params.id[0] : params?.id;
-
       if (!id) return;
+
       try {
         const fetched = await libraryService.getLibraryItem(id);
         if (fetched) {
           setItem(fetched);
-          if (!postText)
-            setPostText(fetched.caption + fetched.hashtags.join("") || "");
+          if (!postText) {
+            setPostText(fetched.caption + " " + fetched.hashtags.join(" "));
+          }
+          return;
         }
-      } catch {
-        // ignore; form remains usable
+
+        const postContent = contentStorage.getContent("postContent");
+        if (postContent && postContent.id === id) {
+          const normalized: LibraryItem = {
+            ...postContent,
+            imageUrl: postContent.imageUrl ?? "",
+            videoUrl: postContent.videoUrl ?? "",
+            type: "post", // 👈 you can adjust depending on use case
+            status: "draft",
+            engagement: { likes: 0, comments: 0, views: 0 },
+          };
+          setItem(normalized);
+          if (!postText) {
+            setPostText(
+              postContent.caption + " " + postContent.hashtags.join(" ")
+            );
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load post item:", err);
       }
     };
     load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params?.id]);
 
   const [schedulePost, { isLoading }] = useSchedulePostMutation();
