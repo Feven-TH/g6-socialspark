@@ -20,10 +20,31 @@ export function useLibrary() {
     type: "success",
   });
 
+  const showToast = useCallback(
+    (message: string, type: "success" | "error") => {
+      setToast({ show: true, message, type });
+      setTimeout(
+        () => setToast({ show: false, message: "", type: "success" }),
+        3000
+      );
+    },
+    []
+  );
+
+  const loadLibraryContent = useCallback(async () => {
+    try {
+      const content = await libraryService.getLibraryContent();
+      setLibraryContent(content);
+    } catch {
+      console.error("Failed to load library content");
+      showToast("Failed to load library content", "error");
+    }
+  }, [showToast]);
+
   // Load content on mount
   useEffect(() => {
     loadLibraryContent();
-  }, []);
+  }, [loadLibraryContent]);
 
   // Filter content when filters change
   useEffect(() => {
@@ -35,27 +56,6 @@ export function useLibrary() {
     );
     setFilteredContent(filtered);
   }, [libraryContent, filters]);
-
-  const loadLibraryContent = useCallback(async () => {
-    try {
-      const content = await libraryService.getLibraryContent();
-      setLibraryContent(content);
-    } catch (error) {
-      console.error("Failed to load library content:", error);
-      showToast("Failed to load library content", "error");
-    }
-  }, []);
-
-  const showToast = useCallback(
-    (message: string, type: "success" | "error") => {
-      setToast({ show: true, message, type });
-      setTimeout(
-        () => setToast({ show: false, message: "", type: "success" }),
-        3000
-      );
-    },
-    []
-  );
 
   const handleFiltersChange = useCallback(
     (newFilters: Partial<FilterState>) => {
@@ -74,14 +74,14 @@ export function useLibrary() {
 
     try {
       await libraryService.deleteLibraryItem(itemToDelete.id);
-      await loadLibraryContent(); // Reload content
+      await loadLibraryContent();
       setDeleteDialogOpen(false);
       setItemToDelete(null);
       showToast(
         `"${itemToDelete.title}" has been deleted successfully`,
         "success"
       );
-    } catch (error) {
+    } catch {
       showToast("Failed to delete item", "error");
     }
   }, [itemToDelete, loadLibraryContent, showToast]);
@@ -90,6 +90,7 @@ export function useLibrary() {
     setDeleteDialogOpen(false);
     setItemToDelete(null);
   }, []);
+
   const handleExportAsImage = useCallback(
     async (item: LibraryItem) => {
       try {
@@ -99,10 +100,12 @@ export function useLibrary() {
               item.videoUrl,
               `${item.title.replace(/\s+/g, "_")}.mp4`
             );
-            showToast(`"${item.title}" video downloaded successfully`, "success");
+            showToast(
+              `"${item.title}" video downloaded successfully`,
+              "success"
+            );
             return;
-          } catch (e) {
-            // Fallback to downloading the thumbnail image if video fetch fails
+          } catch {
             if (item.imageUrl) {
               await libraryService.exportImage(
                 item.imageUrl,
@@ -114,7 +117,7 @@ export function useLibrary() {
               );
               return;
             }
-            throw e;
+            throw new Error("Video and image unavailable");
           }
         }
 
@@ -128,7 +131,7 @@ export function useLibrary() {
         }
 
         showToast("No content to export", "error");
-      } catch (error) {
+      } catch {
         showToast("Failed to export content", "error");
       }
     },
@@ -146,7 +149,7 @@ export function useLibrary() {
         setCopiedId(item.id);
         setTimeout(() => setCopiedId(null), 2000);
         showToast("Caption and hashtags copied to clipboard", "success");
-      } catch (error) {
+      } catch {
         showToast("Failed to copy to clipboard", "error");
       }
     },
@@ -160,7 +163,7 @@ export function useLibrary() {
       try {
         await libraryService.copyToClipboard(hashtagsText);
         showToast("Hashtags copied to clipboard", "success");
-      } catch (error) {
+      } catch {
         showToast("Failed to copy hashtags", "error");
       }
     },

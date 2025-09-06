@@ -11,7 +11,6 @@ import {
 } from "../../../components/card";
 import { Textarea } from "../../../components/textarea";
 import { Badge } from "../../../components/badge";
-import { Button } from "../../../components/button";
 import Toast from "@/components/Toast";
 import { ImageIcon, Camera, Hash, Type, Play, ArrowLeft } from "lucide-react";
 import { ContentItem, ToastState } from "@/types/library";
@@ -78,7 +77,7 @@ export default function Page() {
       {/* Back Button */}
       <button
         onClick={() => router.push("/library")}
-        className="flex items-center gap-2 mb-4 text-sm text-primary font-medium hover:text-primary-foreground transition"
+        className="flex items-center gap-2 mb-4 text-sm text-primary font-medium hover:text-accent transition"
       >
         <ArrowLeft className="w-4 h-4" />
         Back to Library
