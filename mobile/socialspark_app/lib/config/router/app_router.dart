@@ -22,6 +22,7 @@ import '../../features/editor/presentation/bloc/content_editor_event.dart';
 
 // NEW: Create page route target
 import '../../features/create/presentation/pages/create_content_page.dart';
+import '../../features/scheduling/presentation/pages/scheduler_page.dart';
 
 GoRouter buildRouter(SessionStore session) {
   return GoRouter(
@@ -110,6 +111,23 @@ GoRouter buildRouter(SessionStore session) {
         name: 'create',
         builder: (_, __) => const CreateContentPage(),
       ),
+      
+      // Scheduler page
+      GoRoute(
+        path: '/scheduler',
+        name: 'scheduler',
+        builder: (_, state) {
+          final extra = state.extra as Map<String, dynamic>? ?? {};
+          return SchedulerPage(
+            item: {
+              'image': extra['mediaUrl'],
+              'description': extra['caption'],
+              'platform': extra['type'] ?? 'instagram',
+              'hashtags': extra['hashtags'] ?? [],
+            },
+          );
+        },
+      ),
     ],
 
     redirect: (ctx, state) {
@@ -140,6 +158,7 @@ GoRouter buildRouter(SessionStore session) {
             '/library',
             '/editor',
             '/create', // ← important: FAB navigates here
+            '/scheduler',
           };
           if (allowed.contains(state.matchedLocation)) return null;
           return '/home';

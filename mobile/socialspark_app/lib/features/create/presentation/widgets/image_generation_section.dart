@@ -34,6 +34,18 @@ class ImageGenerationSectionState extends State<ImageGenerationSection> {
   late final CreateRemoteDataSource _ds;
 
   String? _taskId;
+  String? _lastPolledStatus; // QUEUED | READY | FAILED | SUCCESS etc.
+  String? _imageUrl;
+
+  // Add this method to get the generated content
+  Map<String, dynamic>? getGeneratedContent() {
+    if (_imageUrl == null) return null;
+    return {
+      'url': _imageUrl,
+      'taskId': _taskId,
+      'status': _lastPolledStatus,
+    };
+  }
   TaskStatus? _status;
   String? _error;
   bool _loading = false;
@@ -102,12 +114,19 @@ class ImageGenerationSectionState extends State<ImageGenerationSection> {
     if (s == 'SUCCESS' || s == 'SUCCEEDED' || s == 'READY' || s == 'COMPLETED') {
       final url = status.url;
       if (url != null && url.isNotEmpty) {
+        setState(() {
+          _imageUrl = url;
+          _lastPolledStatus = s;
+        });
         widget.onImageReady?.call(url, _taskId!);
       } else {
         setState(() => _error = 'Image success but no URL. Response: ${status.toString()}');
       }
     } else {
-      setState(() => _error = status.error ?? 'Image render failed (status=$s)');
+      setState(() {
+        _error = status.error ?? 'Image render failed (status=$s)';
+        _lastPolledStatus = s;
+      });
     }
   }
 

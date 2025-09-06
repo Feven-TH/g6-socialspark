@@ -49,6 +49,16 @@ class VideoGenerationSectionState extends State<VideoGenerationSection> {
   String? _taskId;
   String? _lastPolledStatus; // QUEUED | READY | FAILED | SUCCESS etc.
 
+  // Add this method to get the generated content
+  Map<String, dynamic>? getGeneratedContent() {
+    if (_videoUrl == null) return null;
+    return {
+      'url': _videoUrl,
+      'taskId': _taskId,
+      'status': _lastPolledStatus,
+    };
+  }
+
   // UI toggles
   bool _noMusic = false; // frontend-only hint
 
