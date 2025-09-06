@@ -23,10 +23,12 @@ export const STORAGE_KEYS = {
   EXPORT: "exportDraft",
 } as const;
 
+type StorageKey = (typeof STORAGE_KEYS)[keyof typeof STORAGE_KEYS];
+type SingleStorageKey = Exclude<StorageKey, typeof STORAGE_KEYS.LIBRARY>;
+
 export const contentStorage = {
-  // Save content to a specific storage key
   saveContent: (
-    key: string,
+    key: SingleStorageKey,
     content: Omit<ContentData, "id" | "createdAt">
   ): string => {
     try {
@@ -45,10 +47,13 @@ export const contentStorage = {
     }
   },
 
-  getContent: (key: string): ContentData | null => {
+  getContent: (key: SingleStorageKey): ContentData | null => {
     try {
       const stored = localStorage.getItem(key);
-      return stored ? JSON.parse(stored) : null;
+      if (!stored) return null;
+
+      const parsed = JSON.parse(stored);
+      return parsed && parsed.id ? parsed : null;
     } catch (error) {
       console.error("Failed to get content:", error);
       return null;
@@ -57,33 +62,26 @@ export const contentStorage = {
 
   findContentById: (id: string): ContentData | null => {
     try {
-      // Check all storage keys
-      const keys = Object.values(STORAGE_KEYS);
-      for (const key of keys) {
-        const stored = localStorage.getItem(key);
-        if (stored) {
-          const content: ContentData = JSON.parse(stored);
-          if (content.id === id) {
-            return content;
-          }
-        }
+      const singleKeys: SingleStorageKey[] = [
+        STORAGE_KEYS.SCHEDULER,
+        STORAGE_KEYS.EDITOR,
+        STORAGE_KEYS.POST,
+        STORAGE_KEYS.EXPORT,
+      ];
+
+      for (const key of singleKeys) {
+        const content = contentStorage.getContent(key);
+        if (content?.id === id) return content;
       }
 
-    
-      const library = contentStorage.getLibrary();
-      const libraryItem = library.find((item) => item.id === id);
-      if (libraryItem) {
-        return libraryItem;
-      }
-
-      return null;
+      const libraryItem = contentStorage.getFromLibrary(id);
+      return libraryItem;
     } catch (error) {
       console.error("Failed to find content:", error);
       return null;
     }
   },
 
-  // Save to library (stores multiple items)
   saveToLibrary: (content: Omit<ContentData, "id" | "createdAt">): string => {
     try {
       const id = uuidv4();
@@ -94,10 +92,9 @@ export const contentStorage = {
         createdAt: new Date().toISOString(),
       };
 
-      const updatedLibrary = [...library, newContent];
       localStorage.setItem(
         STORAGE_KEYS.LIBRARY,
-        JSON.stringify(updatedLibrary)
+        JSON.stringify([...library, newContent])
       );
       return id;
     } catch (error) {
@@ -108,26 +105,24 @@ export const contentStorage = {
 
   getLibrary: (): ContentData[] => {
     try {
-      const library = localStorage.getItem(STORAGE_KEYS.LIBRARY);
-      return library ? JSON.parse(library) : [];
+      const stored = localStorage.getItem(STORAGE_KEYS.LIBRARY);
+      if (!stored) return [];
+      const parsed = JSON.parse(stored);
+      return Array.isArray(parsed) ? parsed : [];
     } catch (error) {
       console.error("Failed to get library:", error);
       return [];
     }
   },
 
-  // Get specific item from library by ID
   getFromLibrary: (id: string): ContentData | null => {
-    const library = contentStorage.getLibrary();
-    return library.find((item) => item.id === id) || null;
+    return contentStorage.getLibrary().find((item) => item.id === id) || null;
   },
 
-  // Update content in library
   updateInLibrary: (id: string, updates: Partial<ContentData>): boolean => {
     try {
       const library = contentStorage.getLibrary();
       const index = library.findIndex((item) => item.id === id);
-
       if (index === -1) return false;
 
       library[index] = { ...library[index], ...updates };
@@ -142,11 +137,8 @@ export const contentStorage = {
   removeFromLibrary: (id: string): boolean => {
     try {
       const library = contentStorage.getLibrary();
-      const updatedLibrary = library.filter((item) => item.id !== id);
-      localStorage.setItem(
-        STORAGE_KEYS.LIBRARY,
-        JSON.stringify(updatedLibrary)
-      );
+      const updated = library.filter((item) => item.id !== id);
+      localStorage.setItem(STORAGE_KEYS.LIBRARY, JSON.stringify(updated));
       return true;
     } catch (error) {
       console.error("Failed to remove from library:", error);
@@ -166,21 +158,23 @@ export const contentStorage = {
 
   getAllContent: (): ContentData[] => {
     try {
-      const allContent: ContentData[] = [];
+      const all: ContentData[] = [];
 
-      Object.values(STORAGE_KEYS)
-        .filter((key) => key !== STORAGE_KEYS.LIBRARY)
-        .forEach((key) => {
-          const content = contentStorage.getContent(key);
-          if (content) {
-            allContent.push(content);
-          }
-        });
+      const singleKeys: SingleStorageKey[] = [
+        STORAGE_KEYS.SCHEDULER,
+        STORAGE_KEYS.EDITOR,
+        STORAGE_KEYS.POST,
+        STORAGE_KEYS.EXPORT,
+      ];
 
-      const library = contentStorage.getLibrary();
-      allContent.push(...library);
+      singleKeys.forEach((key) => {
+        const content = contentStorage.getContent(key);
+        if (content) all.push(content);
+      });
 
-      return allContent;
+      all.push(...contentStorage.getLibrary());
+
+      return all;
     } catch (error) {
       console.error("Failed to get all content:", error);
       return [];

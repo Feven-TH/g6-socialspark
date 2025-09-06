@@ -12,7 +12,7 @@ import { Badge } from "@/components/badge";
 import { Slider } from "@/components/slider";
 import Toast from "@/components/Toast";
 import { ToastState } from "@/types/library";
-import * as htmlToImage from "html-to-image"; 
+import * as htmlToImage from "html-to-image";
 
 import {
   Select,
@@ -84,9 +84,8 @@ function getContrastColor(hex: string) {
 }
 
 export default function EditorPage() {
-
   const { id } = useParams();
-   const previewRef = useRef<HTMLDivElement>(null);
+  const previewRef = useRef<HTMLDivElement>(null);
 
   const [caption, setCaption] = useState("");
   const [hashtags, setHashtags] = useState<string[]>([]);
@@ -139,14 +138,14 @@ export default function EditorPage() {
 
     const newHistory = history.slice(0, historyIndex + 1);
     newHistory.push(currentState);
-    
+
     // Limit history to 50 states
     if (newHistory.length > 50) {
       newHistory.shift();
     } else {
       setHistoryIndex(historyIndex + 1);
     }
-    
+
     setHistory(newHistory);
   };
 
@@ -357,7 +356,6 @@ export default function EditorPage() {
     }
   };
 
-
   return (
     <div className="min-h-screen bg-background">
       {/* Sticky Header */}
@@ -372,26 +370,34 @@ export default function EditorPage() {
                 <h1 className="text-xl font-black font-montserrat text-foreground">
                   Content Editor
                 </h1>
-                <p className="text-sm text-muted-foreground">Fine-tune your content</p>
+                <p className="text-sm text-muted-foreground">
+                  Fine-tune your content
+                </p>
               </div>
             </div>
-            
+
             <div className="flex items-center gap-2">
-              <Button 
-                variant="ghost" 
-                size="sm" 
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={handleUndo}
                 disabled={historyIndex <= 0}
-                className={historyIndex <= 0 ? "opacity-50 cursor-not-allowed" : ""}
+                className={
+                  historyIndex <= 0 ? "opacity-50 cursor-not-allowed" : ""
+                }
               >
                 <Undo className="w-4 h-4" />
               </Button>
-              <Button 
-                variant="ghost" 
-                size="sm" 
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={handleRedo}
                 disabled={historyIndex >= history.length - 1}
-                className={historyIndex >= history.length - 1 ? "opacity-50 cursor-not-allowed" : ""}
+                className={
+                  historyIndex >= history.length - 1
+                    ? "opacity-50 cursor-not-allowed"
+                    : ""
+                }
               >
                 <Redo className="w-4 h-4" />
               </Button>
@@ -639,7 +645,9 @@ export default function EditorPage() {
                     <Input
                       type="text"
                       value={backgroundColor}
-                      onChange={(e) => handleBackgroundColorChange(e.target.value)}
+                      onChange={(e) =>
+                        handleBackgroundColorChange(e.target.value)
+                      }
                       className="flex-1"
                     />
                   </div>
@@ -750,7 +758,10 @@ export default function EditorPage() {
                     <SelectItem value="tiktok">Tiktok post</SelectItem>
                   </SelectContent>
                 </Select>
-                <Button className="w-full bg-black text-white hover:bg-gray-800" onClick={handleDownload}> 
+                <Button
+                  className="w-full bg-black text-white hover:bg-gray-800"
+                  onClick={handleDownload}
+                >
                   <Download className="w-4 h-4 mr-2" />
                   Download
                 </Button>
@@ -767,4 +778,3 @@ export default function EditorPage() {
     </div>
   );
 }
-

@@ -29,7 +29,7 @@ export default function LandingPage() {
     if (brandData) {
       setBrand(JSON.parse(brandData));
     }
-  });
+  }, []);
   const features = [
     {
       icon: <Sparkles className="w-6 h-6 text-primary" />,
