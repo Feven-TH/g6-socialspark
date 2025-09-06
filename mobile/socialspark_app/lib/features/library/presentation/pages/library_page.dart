@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:socialspark_app/core/widgets/main_scaffold.dart';
 import 'package:socialspark_app/features/scheduling/presentation/pages/scheduler_page.dart';
-import 'package:socialspark_app/features/library/data/library_data_service.dart';
+import 'package:socialspark_app/features/library/data/datasources/library_local_ds.dart';
+import 'package:socialspark_app/features/library/data/models/library_item.dart';
 
 class LibraryPage extends StatefulWidget {
   const LibraryPage({super.key});
@@ -11,32 +13,52 @@ class LibraryPage extends StatefulWidget {
 }
 
 class _LibraryPageState extends State<LibraryPage> {
+  final LibraryLocalDataSource _libraryDs = LibraryLocalDataSource.instance;
+  List<LibraryItem> _items = [];
+
   String _selectedPlatform = 'All';
   String _selectedContentType = 'All';
 
-  final List<String> _platforms = ['All', 'Instagram', 'TikTok'];
+  final List<String> _platforms = ['All', 'instagram', 'tiktok'];
   final List<String> _contentTypes = ['All', 'Image', 'Video'];
 
-  final List<Map<String, dynamic>> _dummyData = LibraryDataService.getData();
+  @override
+  void initState() {
+    super.initState();
+    _libraryDs.addListener(_loadLibraryItems);
+    _loadLibraryItems();
+  }
 
-  void _deleteItem(int index) {
-    setState(() {
-      LibraryDataService.deleteItem(index);
-    });
+  @override
+  void dispose() {
+    _libraryDs.removeListener(_loadLibraryItems);
+    super.dispose();
+  }
+
+  Future<void> _loadLibraryItems() async {
+    final items = await _libraryDs.getLibraryItems();
+    if (mounted) {
+      setState(() => _items = items);
+    }
+  }
+
+  void _deleteItem(String id) {
+    _libraryDs.deleteLibraryItem(id);
   }
 
   @override
   Widget build(BuildContext context) {
-    final filteredData = _dummyData.where((item) {
+    final filteredData = _items.where((item) {
       final platformMatch =
-          _selectedPlatform == 'All' || item['platform'] == _selectedPlatform;
+          _selectedPlatform == 'All' || item.platform == _selectedPlatform;
       final typeMatch = _selectedContentType == 'All' ||
-          item['type'] == _selectedContentType;
+          (_selectedContentType == 'Image' && item.type == MediaType.image) ||
+          (_selectedContentType == 'Video' && item.type == MediaType.video);
       return platformMatch && typeMatch;
     }).toList();
 
     return MainScaffold(
-      currentIndex: 1, // This will highlight the Library tab in the bottom navigation bar
+      currentIndex: 1,
       child: CustomScrollView(
         slivers: [
           SliverAppBar(
@@ -44,12 +66,11 @@ class _LibraryPageState extends State<LibraryPage> {
             elevation: 0,
             title: Row(
               children: [
-                const Icon(Icons.auto_awesome_mosaic,
-                    color: Color(0xFF0F2137)),
+                const Icon(Icons.auto_awesome_mosaic, color: Color(0xFF0F2137)),
                 const SizedBox(width: 8),
-                Column(
+                const Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: const [
+                  children: [
                     Text('Content Library',
                         style: TextStyle(
                             color: Color(0xFF0F2137),
@@ -64,7 +85,7 @@ class _LibraryPageState extends State<LibraryPage> {
               Padding(
                 padding: const EdgeInsets.only(right: 16.0),
                 child: TextButton.icon(
-                  onPressed: () {},
+                  onPressed: () => context.go('/create'),
                   icon: const Icon(Icons.add, color: Colors.white),
                   label: const Text('Create New',
                       style: TextStyle(color: Colors.white)),
@@ -87,7 +108,6 @@ class _LibraryPageState extends State<LibraryPage> {
               padding: const EdgeInsets.all(16.0),
               child: Column(
                 children: [
-                  // Search and filter options
                   Row(
                     children: [
                       Expanded(
@@ -104,7 +124,6 @@ class _LibraryPageState extends State<LibraryPage> {
                         ),
                       ),
                       const SizedBox(width: 10),
-                      // Filter and view options
                       Row(
                         children: [
                           const Icon(Icons.filter_list),
@@ -157,30 +176,19 @@ class _LibraryPageState extends State<LibraryPage> {
                 crossAxisCount: 2,
                 crossAxisSpacing: 16,
                 mainAxisSpacing: 16,
-                childAspectRatio:
-                    0.55, // Adjust aspect ratio for more image space
+                childAspectRatio: 0.52, // Adjusted for more height
               ),
               delegate: SliverChildBuilderDelegate(
                 (context, index) {
                   final item = filteredData[index];
                   return _ContentCard(
-                    key: ValueKey('content_$index'),
-                    status: item['status']!,
-                    image: item['image']!,
-                    title: item['title']!,
-                    description: item['description']!,
-                    tags: item['tags'] as List<String>,
-                    date: item['date']!,
-                    platform: item['platform']!,
-                    type: item['type']!,
-                    onDelete: () => _deleteItem(index),
+                    item: item,
+                    onDelete: () => _deleteItem(item.id),
                     onSchedule: () {
-                      // Ensure we're using the correct context for navigation
                       Navigator.of(context).push(
                         MaterialPageRoute(
                           builder: (context) => SchedulerPage(
                             item: item,
-                            index: _dummyData.indexOf(item),
                           ),
                         ),
                       );
@@ -198,27 +206,12 @@ class _LibraryPageState extends State<LibraryPage> {
 }
 
 class _ContentCard extends StatefulWidget {
-  final String status;
-  final String image;
-  final String title;
-  final String description;
-  final List<String> tags;
-  final String date;
-  final String platform;
-  final String type;
+  final LibraryItem item;
   final VoidCallback onDelete;
   final VoidCallback onSchedule;
 
   const _ContentCard({
-    super.key,
-    required this.status,
-    required this.image,
-    required this.title,
-    required this.description,
-    required this.tags,
-    required this.date,
-    required this.platform,
-    required this.type,
+    required this.item,
     required this.onDelete,
     required this.onSchedule,
   });
@@ -238,9 +231,8 @@ class _ContentCardState extends State<_ContentCard> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Image with status badge and hover effect
           GestureDetector(
-            onTap: widget.onSchedule, // Make the whole image tappable for scheduling
+            onTap: widget.onSchedule,
             child: Stack(
               alignment: Alignment.center,
               children: [
@@ -249,33 +241,56 @@ class _ContentCardState extends State<_ContentCard> {
                     topLeft: Radius.circular(12),
                     topRight: Radius.circular(12),
                   ),
-                  child: Image.asset(
-                    widget.image,
-                    height: 180,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                  ),
+                  child: (widget.item.type == MediaType.video)
+                      ? Container(
+                          height: 180,
+                          width: double.infinity,
+                          color: Colors.grey[300],
+                          child: const Center(
+                            child: Icon(
+                              Icons.play_circle_outline,
+                              size: 50,
+                              color: Colors.black54,
+                            ),
+                          ),
+                        )
+                      : Image.network(
+                          widget.item.mediaUrl,
+                          height: 180,
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              height: 180,
+                              width: double.infinity,
+                              color: Colors.grey[300],
+                              child: const Center(
+                                child: Icon(
+                                  Icons.error_outline,
+                                  size: 50,
+                                  color: Colors.black54,
+                                ),
+                              ),
+                            );
+                          },
+                        ),
                 ),
                 Positioned(
                   top: 8,
                   left: 8,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: widget.status == 'published'
-                          ? const Color(0xFF0F2137)
-                          : widget.status == 'scheduled'
-                              ? Colors.blue
-                              : const Color(0xFFFFA500),
+                      color: const Color(0xFFFFA500),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Text(
-                      widget.status,
-                      style: const TextStyle(color: Colors.white, fontSize: 10),
+                    child: const Text(
+                      'Draft',
+                      style: TextStyle(color: Colors.white, fontSize: 10),
                     ),
                   ),
                 ),
-                // Hover overlay with schedule button
                 MouseRegion(
                   onEnter: (_) => setState(() => _isHovering = true),
                   onExit: (_) => setState(() => _isHovering = false),
@@ -316,33 +331,26 @@ class _ContentCardState extends State<_ContentCard> {
               ],
             ),
           ),
-          // Content details
           Padding(
             padding: const EdgeInsets.all(12.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  widget.title,
+                  widget.item.caption,
                   style: const TextStyle(
                       fontWeight: FontWeight.bold, fontSize: 14),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  widget.description,
-                  style: const TextStyle(color: Colors.grey, fontSize: 12),
-                  maxLines: 2,
+                  maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 8),
-                // Tags
+                const SizedBox(height: 4),
                 Wrap(
                   spacing: 6,
                   runSpacing: 4,
-                  children: widget.tags
+                  children: widget.item.hashtags
                       .map((tag) => Chip(
-                            label:
-                                Text(tag, style: const TextStyle(fontSize: 10)),
+                            label: Text('#$tag',
+                                style: const TextStyle(fontSize: 10)),
                             backgroundColor: Colors.grey[200],
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 4, vertical: 0),
@@ -353,11 +361,10 @@ class _ContentCardState extends State<_ContentCard> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  widget.date,
+                  widget.item.createdAt.toIso8601String().substring(0, 10),
                   style: const TextStyle(color: Colors.grey, fontSize: 10),
                 ),
                 const SizedBox(height: 8),
-                // Action buttons
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -368,36 +375,13 @@ class _ContentCardState extends State<_ContentCard> {
                     _ActionButton(
                         icon: Icons.share_outlined, onPressed: () {}),
                     _ActionButton(
-                        icon: Icons.delete_outline,
-                        onPressed: widget.onDelete),
+                        icon: Icons.delete_outline, onPressed: widget.onDelete),
                   ],
                 ),
               ],
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _HoverButton extends StatelessWidget {
-  final IconData icon;
-  final VoidCallback onPressed;
-
-  const _HoverButton({required this.icon, required this.onPressed});
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onPressed,
-      child: Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: const Color(0xFFFFA500).withOpacity(0.9),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Icon(icon, color: Colors.white, size: 20),
       ),
     );
   }

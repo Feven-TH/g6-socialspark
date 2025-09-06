@@ -2,14 +2,17 @@ import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
+import 'package:socialspark_app/core/widgets/main_scaffold.dart';
 
 import '../../../../core/network/api_client.dart';
 import '../../../create/data/datasources/create_remote_ds.dart';
 import '../../../create/data/models/brand_preset.dart';
 import '../../../create/data/models/requests.dart';
-import '../../../create/data/models/task_status.dart';
 import '../widgets/video_generation_section.dart';
 import '../widgets/image_generation_section.dart';
+import '../../../library/data/models/library_item.dart';
+import '../../../library/data/datasources/library_local_ds.dart';
 
 class CreateContentPage extends StatefulWidget {
   const CreateContentPage({super.key});
@@ -19,6 +22,7 @@ class CreateContentPage extends StatefulWidget {
 
 class _CreateContentPageState extends State<CreateContentPage> {
   late final CreateRemoteDataSource _ds;
+  final LibraryLocalDataSource _libraryDs = LibraryLocalDataSource.instance;
 
   final _ideaCtrl = TextEditingController();
   final _captionCtrl = TextEditingController();
@@ -37,7 +41,6 @@ class _CreateContentPageState extends State<CreateContentPage> {
   String? _error;
   bool _loading = false;
 
-  // Typed key to call child's public start()
   final GlobalKey<VideoGenerationSectionState> _videoKey =
       GlobalKey<VideoGenerationSectionState>();
   final GlobalKey<ImageGenerationSectionState> _imageKey =
@@ -70,12 +73,6 @@ class _CreateContentPageState extends State<CreateContentPage> {
         footerText: "Wildlife 2025",
       );
 
-  String _aspectForPlatform({required bool video}) {
-    if (_platform == 'tiktok') return "9:16";
-    if (video) return "9:16";
-    return "1:1";
-  }
-
   Future<void> _generateAll() async {
     setState(() {
       _loading = true;
@@ -87,7 +84,6 @@ class _CreateContentPageState extends State<CreateContentPage> {
         : _ideaCtrl.text.trim();
 
     try {
-      // Always get a caption
       final caption = await _ds.generateCaption(
         CaptionRequest(
           idea: idea,
@@ -96,7 +92,6 @@ class _CreateContentPageState extends State<CreateContentPage> {
         ),
       );
 
-      // Show the section and auto-start it
       setState(() {
         _captionCtrl.text = caption;
         _loading = false;
@@ -112,20 +107,9 @@ class _CreateContentPageState extends State<CreateContentPage> {
     } catch (e) {
       setState(() {
         _loading = false;
-        _error = _extractError(e);
+        _error = e.toString();
       });
     }
-  }
-
-  String _extractError(Object e) {
-    if (e is DioException) {
-      final data = e.response?.data;
-      if (data is Map && data['detail'] != null) {
-        return data['detail'].toString();
-      }
-      return e.message ?? e.toString();
-    }
-    return e.toString();
   }
 
   Future<void> _exportClipboard() async {
@@ -137,6 +121,24 @@ class _CreateContentPageState extends State<CreateContentPage> {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Copied caption + hashtags')),
+      );
+    }
+  }
+
+  Future<void> _saveToLibrary(String mediaUrl, String taskId) async {
+    final item = LibraryItem(
+      id: taskId,
+      mediaUrl: mediaUrl,
+      caption: _captionCtrl.text,
+      hashtags: _hashtags,
+      platform: _platform,
+      type: _isVideoType ? MediaType.video : MediaType.image,
+      createdAt: DateTime.now(),
+    );
+    await _libraryDs.saveLibraryItem(item);
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Saved to library')),
       );
     }
   }
@@ -156,220 +158,201 @@ class _CreateContentPageState extends State<CreateContentPage> {
       }).toList(),
     );
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('Create Content')),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          Row(children: [
-            Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                    color: const Color(0xFF0F2137),
-                    borderRadius: BorderRadius.circular(10)),
-                child: const Icon(Icons.auto_awesome, color: Colors.white)),
-            const SizedBox(width: 12),
-            const Expanded(
-              child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('SocialSpark',
-                        style: TextStyle(
-                            fontWeight: FontWeight.w700, fontSize: 16)),
-                    Text('AI-Powered Content Creation',
-                        style:
-                            TextStyle(color: Colors.black54, fontSize: 12)),
-                  ]),
-            ),
-          ]),
-          const SizedBox(height: 16),
-
-          Text('Content idea',
-              style: Theme.of(context)
-                  .textTheme
-                  .titleLarge
-                  ?.copyWith(fontWeight: FontWeight.w700)),
-          const SizedBox(height: 8),
-          TextField(
-            controller: _ideaCtrl,
-            maxLines: 4,
-            decoration: InputDecoration(
-              hintText: 'Describe your idea… (e.g. 15s TikTok for wildlife conservation ad)',
-              border:
-                  OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              filled: true,
-              fillColor: Colors.grey.shade100,
-            ),
+    return MainScaffold(
+      currentIndex: -1, // No tab selected
+      child: NestedScrollView(
+        headerSliverBuilder: (context, innerBoxIsScrolled) => [
+          const SliverAppBar(
+            title: Text('Create Content'),
+            automaticallyImplyLeading: false, // Removes back button
           ),
-          const SizedBox(height: 12),
-
-          Row(children: [
-            Expanded(
-              child: DropdownButtonFormField<String>(
-                value: _platform,
-                decoration: const InputDecoration(
-                    labelText: 'Platform', border: OutlineInputBorder()),
-                items: _platforms
-                    .map((p) => DropdownMenuItem(value: p, child: Text(p)))
-                    .toList(),
-                onChanged: (v) => setState(() => _platform = v ?? 'instagram'),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: DropdownButtonFormField<String>(
-                value: _ctype,
-                decoration: const InputDecoration(
-                    labelText: 'Content type', border: OutlineInputBorder()),
-                items: _types
-                    .map((t) => DropdownMenuItem(value: t, child: Text(t)))
-                    .toList(),
-                onChanged: (v) => setState(() => _ctype = v ?? 'image post'),
-              ),
-            ),
-          ]),
-          const SizedBox(height: 12),
-
-          const Text('Tone'),
-          const SizedBox(height: 6),
-          toneChips,
-          const SizedBox(height: 12),
-
-          const Text('Call to Action (CTA) — used for video'),
-          const SizedBox(height: 6),
-          TextField(
-            controller: _ctaCtrl,
-            decoration: InputDecoration(
-              hintText: 'e.g., call and reserve',
-              border:
-                  OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              filled: true,
-              fillColor: Colors.grey.shade100,
-            ),
-          ),
-          const SizedBox(height: 12),
-
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton.icon(
-              icon: const Icon(Icons.auto_awesome),
-              label: Text(_loading
-                  ? 'Generating…'
-                  : (_isVideoType ? 'Generate (video)' : 'Generate (image)')),
-              onPressed: _loading ? null : _generateAll,
-            ),
-          ),
-
-          if (_error != null) ...[
-            const SizedBox(height: 12),
-            Text(_error!, style: const TextStyle(color: Colors.red)),
-          ],
-
-          if (_loading) ...[
-            const SizedBox(height: 16),
-            const Center(child: CircularProgressIndicator()),
-          ],
-
-          if (!_loading && _captionCtrl.text.isNotEmpty) ...[
-            const SizedBox(height: 16),
-            Text('Generated Content',
-                style: Theme.of(context)
-                    .textTheme
-                    .titleLarge
-                    ?.copyWith(fontWeight: FontWeight.w700)),
-            const SizedBox(height: 8),
-
-            const Text('Caption',
-                style: TextStyle(fontWeight: FontWeight.w600)),
-            Container(
-              decoration: BoxDecoration(
-                  color: Colors.grey.shade100,
-                  borderRadius: BorderRadius.circular(12)),
-              padding: const EdgeInsets.all(12),
-              child: TextField(
-                  controller: _captionCtrl,
-                  maxLines: 8,
-                  decoration:
-                      const InputDecoration(border: InputBorder.none)),
-            ),
-            const SizedBox(height: 12),
-
-            const Text('# Hashtags',
-                style: TextStyle(fontWeight: FontWeight.w600)),
-            Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children:
-                    _hashtags.map((h) => Chip(label: Text('#$h'))).toList()),
-            const SizedBox(height: 16),
-            Wrap(spacing: 12, runSpacing: 12, children: [
-              OutlinedButton.icon(
-                  onPressed: _loading ? null : _generateAll,
-                  icon: const Icon(Icons.refresh),
-                  label: const Text('Regenerate')),
-              OutlinedButton.icon(
-                  onPressed: _exportClipboard,
-                  icon: const Icon(Icons.outbox),
-                  label: const Text('Export')),
-              OutlinedButton.icon(
-                  onPressed: () {},
-                  icon: const Icon(Icons.schedule),
-                  label: const Text('Schedule')),
-              OutlinedButton.icon(
-                  onPressed: () {},
-                  icon: const Icon(Icons.share),
-                  label: const Text('Share now')),
-            ]),
-          ],
-
-          if (_isVideoType) ...[
-            const SizedBox(height: 24),
-            Divider(color: Colors.grey.shade300, height: 1),
-            const SizedBox(height: 16),
-            Text('Video Generation',
-                style: Theme.of(context)
-                    .textTheme
-                    .titleLarge
-                    ?.copyWith(fontWeight: FontWeight.w700)),
-            const SizedBox(height: 8),
-            VideoGenerationSection(
-              key: _videoKey,
-              initialIdea: _ideaCtrl.text,
-              initialPlatform: _platform,
-              initialCta: _ctaCtrl.text,
-              brandPreset: _brand(),
-              onVideoReady: (url, taskId) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Video ready (task $taskId)')),
-                );
-              },
-            ),
-          ] else ...[
-            const SizedBox(height: 24),
-            Divider(color: Colors.grey.shade300, height: 1),
-            const SizedBox(height: 16),
-            Text('Image Generation',
-                style: Theme.of(context)
-                    .textTheme
-                    .titleLarge
-                    ?.copyWith(fontWeight: FontWeight.w700)),
-            const SizedBox(height: 8),
-            ImageGenerationSection(
-              key: _imageKey,
-              initialIdea: _ideaCtrl.text,
-              initialPlatform: _platform,
-              brandPreset: _brand(),
-              onImageReady: (url, taskId) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Image ready (task $taskId)')),
-                );
-                setState(() => _imageUrl = url);
-              },
-            ),
-          ],
-          const SizedBox(height: 32),
         ],
+        body: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            Text('Content idea',
+                style: Theme.of(context)
+                    .textTheme
+                    .titleLarge
+                    ?.copyWith(fontWeight: FontWeight.w700)),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _ideaCtrl,
+              maxLines: 4,
+              decoration: InputDecoration(
+                hintText:
+                    'Describe your idea… (e.g. 15s TikTok for wildlife conservation ad)',
+                border:
+                    OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                filled: true,
+                fillColor: Colors.grey.shade100,
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            Row(children: [
+              Expanded(
+                child: DropdownButtonFormField<String>(
+                  value: _platform,
+                  decoration: const InputDecoration(
+                      labelText: 'Platform', border: OutlineInputBorder()),
+                  items: _platforms
+                      .map((p) => DropdownMenuItem(value: p, child: Text(p)))
+                      .toList(),
+                  onChanged: (v) => setState(() => _platform = v ?? 'instagram'),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: DropdownButtonFormField<String>(
+                  value: _ctype,
+                  decoration: const InputDecoration(
+                      labelText: 'Content type', border: OutlineInputBorder()),
+                  items: _types
+                      .map((t) => DropdownMenuItem(value: t, child: Text(t)))
+                      .toList(),
+                  onChanged: (v) => setState(() => _ctype = v ?? 'image post'),
+                ),
+              ),
+            ]),
+            const SizedBox(height: 12),
+
+            const Text('Tone'),
+            const SizedBox(height: 6),
+            toneChips,
+            const SizedBox(height: 12),
+
+            const Text('Call to Action (CTA) — used for video'),
+            const SizedBox(height: 6),
+            TextField(
+              controller: _ctaCtrl,
+              decoration: InputDecoration(
+                hintText: 'e.g., call and reserve',
+                border:
+                    OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                filled: true,
+                fillColor: Colors.grey.shade100,
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                icon: const Icon(Icons.auto_awesome),
+                label: Text(_loading
+                    ? 'Generating…'
+                    : (_isVideoType ? 'Generate (video)' : 'Generate (image)')),
+                onPressed: _loading ? null : _generateAll,
+              ),
+            ),
+
+            if (_error != null) ...[
+              const SizedBox(height: 12),
+              Text(_error!, style: const TextStyle(color: Colors.red)),
+            ],
+
+            if (_loading) ...[
+              const SizedBox(height: 16),
+              const Center(child: CircularProgressIndicator()),
+            ],
+
+            if (!_loading && _captionCtrl.text.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              Text('Generated Content',
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleLarge
+                      ?.copyWith(fontWeight: FontWeight.w700)),
+              const SizedBox(height: 8),
+
+              const Text('Caption',
+                  style: TextStyle(fontWeight: FontWeight.w600)),
+              Container(
+                decoration: BoxDecoration(
+                    color: Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(12)),
+                padding: const EdgeInsets.all(12),
+                child: TextField(
+                    controller: _captionCtrl,
+                    maxLines: 8,
+                    decoration:
+                        const InputDecoration(border: InputBorder.none)),
+              ),
+              const SizedBox(height: 12),
+
+              const Text('# Hashtags',
+                  style: TextStyle(fontWeight: FontWeight.w600)),
+              Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children:
+                      _hashtags.map((h) => Chip(label: Text('#$h'))).toList()),
+              const SizedBox(height: 16),
+              Wrap(spacing: 12, runSpacing: 12, children: [
+                OutlinedButton.icon(
+                    onPressed: _loading ? null : _generateAll,
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('Regenerate')),
+                OutlinedButton.icon(
+                    onPressed: _exportClipboard,
+                    icon: const Icon(Icons.outbox),
+                    label: const Text('Export')),
+                OutlinedButton.icon(
+                    onPressed: () {},
+                    icon: const Icon(Icons.schedule),
+                    label: const Text('Schedule')),
+                OutlinedButton.icon(
+                    onPressed: () {},
+                    icon: const Icon(Icons.share),
+                    label: const Text('Share now')),
+              ]),
+            ],
+
+            if (_isVideoType) ...[
+              const SizedBox(height: 24),
+              Divider(color: Colors.grey.shade300, height: 1),
+              const SizedBox(height: 16),
+              Text('Video Generation',
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleLarge
+                      ?.copyWith(fontWeight: FontWeight.w700)),
+              const SizedBox(height: 8),
+              VideoGenerationSection(
+                key: _videoKey,
+                initialIdea: _ideaCtrl.text,
+                initialPlatform: _platform,
+                initialCta: _ctaCtrl.text,
+                brandPreset: _brand(),
+                onVideoReady: (url, taskId) {
+                  _saveToLibrary(url, taskId);
+                },
+              ),
+            ] else ...[
+              const SizedBox(height: 24),
+              Divider(color: Colors.grey.shade300, height: 1),
+              const SizedBox(height: 16),
+              Text('Image Generation',
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleLarge
+                      ?.copyWith(fontWeight: FontWeight.w700)),
+              const SizedBox(height: 8),
+              ImageGenerationSection(
+                key: _imageKey,
+                initialIdea: _ideaCtrl.text,
+                initialPlatform: _platform,
+                brandPreset: _brand(),
+                onImageReady: (url, taskId) {
+                  setState(() => _imageUrl = url);
+                  _saveToLibrary(url, taskId);
+                },
+              ),
+            ],
+            const SizedBox(height: 32),
+          ],
+        ),
       ),
     );
   }
