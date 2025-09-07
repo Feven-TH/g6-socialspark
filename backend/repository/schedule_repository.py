@@ -3,7 +3,7 @@ import json
 from typing import Optional
 from datetime import datetime
 
-r = redis.Redis(host="localhost", port=6379, db=0, decode_responses=True)
+r = redis.Redis(host="redis", port=6379, db=0, decode_responses=True)
 
 class ScheduledItem:
     def __init__(self, asset_id: str, platform: str, run_at: datetime, celery_task_id: str, status="queued"):
