@@ -1,15 +1,23 @@
+import os
+from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from delivery.api.routers import captions, images, videos, schedule, tasks
+
+load_dotenv()
 
 
 def create_app():
     app = FastAPI(title="SocialSpark")
 
     # CORS Middleware
+    origins = os.getenv(
+        "FRONTEND_URLS", "http://localhost:3000,http://localhost:8000"
+    ).split(",")
+
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],
+        allow_origins=origins,
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
