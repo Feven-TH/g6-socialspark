@@ -11,7 +11,7 @@ const Header = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const links = [
-    { href: "/dashboard", label: lang === "EN" ? "Create Content" : "ዳሽቦርድ" },
+    { href: "/dashboard", label: lang === "EN" ? "Create " : "ፍጠር" },
     { href: "/Brand", label: lang === "EN" ? "Brand" : "ብራንድ" },
     { href: "/library", label: lang === "EN" ? "Library" : "ቤተ-መጻህፍት" },
   ];
