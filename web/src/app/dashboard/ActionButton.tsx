@@ -79,7 +79,6 @@ export default function Actions({
       setIsExporting(false);
     }
   };
-
   const exportAsFile = async (fileUrl: string, extension: "png" | "mp4") => {
     try {
       const fileName = generatedContent.caption
@@ -96,12 +95,11 @@ export default function Actions({
       }
     } catch (error) {
       console.error("File export error:", error);
-      // Fallback: open in new tab
+
       window.open(fileUrl, "_blank");
       throw new Error("Failed to download. Opened in new tab instead.");
     }
   };
-
   const exportAsText = () => {
     const content = `
 SOCIAL MEDIA CONTENT
@@ -168,14 +166,14 @@ Shot ${index + 1}:
       if (route === "library" || route === "post") {
         // Save both Library and Post content under 'libraryContent'
         id = contentStorage.saveToLibrary(contentData);
-        showToast(
-          route === "library"
-            ? "Content saved to library successfully!"
-            : "Content saved for posting successfully!",
-          "success"
-        );
+
+        // Only show toast for library, not for post
+        if (route === "library") {
+          showToast("Content saved to library successfully!", "success");
+        }
+
         if (route === "post") {
-          // Navigate to post page
+          // Navigate to post page without showing toast
           router.push(`/post/${id}`);
         }
       } else {

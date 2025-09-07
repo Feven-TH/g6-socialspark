@@ -176,7 +176,7 @@ export default function ContentCard({
                 <Copy className="w-3 h-3 sm:w-4 sm:h-4" />
               )}
             </Button>
-            <Button
+            {/* <Button
               size="sm"
               variant="ghost"
               onClick={() => onSchedule(item)}
@@ -184,7 +184,7 @@ export default function ContentCard({
               className="p-1 sm:p-2"
             >
               <Clock className="w-3 h-3 sm:w-4 sm:h-4" />
-            </Button>
+            </Button> */}
             <Button
               size="sm"
               variant="ghost"

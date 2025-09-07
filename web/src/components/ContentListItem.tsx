@@ -10,8 +10,6 @@ import {
   Instagram,
   Video,
   Eye,
-  Heart,
-  MessageCircle,
   Clock,
   Copy,
   Check,
@@ -170,7 +168,7 @@ export default function ContentListItem({
               <Edit className="w-4 h-4" />
             </Button>
 
-            <Button
+            {/* <Button
               size="sm"
               variant="ghost"
               onClick={() => onSchedule(item)}
@@ -178,7 +176,7 @@ export default function ContentListItem({
               className="flex justify-center p-2 flex-shrink-0"
             >
               <Clock className="w-4 h-4" />
-            </Button>
+            </Button> */}
 
             {/* Post / Schedule button only for images */}
             {item.imageUrl && (
