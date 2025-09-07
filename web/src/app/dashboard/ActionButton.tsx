@@ -54,14 +54,14 @@ export default function Actions({
     );
   };
 
-  const handleExport = () => {
+  const handleExport = async () => {
     setIsExporting(true);
     try {
       if (contentType === "image" && generatedContent.imageUrl) {
-        exportAsFile(generatedContent.imageUrl, "png");
+        await exportAsFile(generatedContent.imageUrl, "png");
         showToast("Image download started!", "success");
       } else if (contentType === "video" && generatedContent.videoUrl) {
-        exportAsFile(generatedContent.videoUrl, "mp4");
+        await exportAsFile(generatedContent.videoUrl, "mp4");
         showToast("Video download started!", "success");
       } else {
         exportAsText();
@@ -79,12 +79,8 @@ export default function Actions({
       setIsExporting(false);
     }
   };
-
-  const exportAsFile = (fileUrl: string, extension: "png" | "mp4") => {
+  const exportAsFile = async (fileUrl: string, extension: "png" | "mp4") => {
     try {
-      const link = document.createElement("a");
-      link.href = fileUrl;
-
       const fileName = generatedContent.caption
         ? `${generatedContent.caption
             .split(" ")
@@ -92,12 +88,14 @@ export default function Actions({
             .join("_")}.${extension}`
         : `social_content_${Date.now()}.${extension}`;
 
-      link.download = fileName;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      if (extension === "png") {
+        await libraryService.exportImage(fileUrl, fileName);
+      } else if (extension === "mp4") {
+        await libraryService.downloadVideo(fileUrl, fileName);
+      }
     } catch (error) {
       console.error("File export error:", error);
+      // Fallback: open in new tab
       window.open(fileUrl, "_blank");
       throw new Error("Failed to download. Opened in new tab instead.");
     }
@@ -266,13 +264,13 @@ Shot ${index + 1}:
           )}
         </Button>
 
-        <Button
+        {/* <Button
           variant="outline"
           onClick={() => handleSaveAndNavigate("scheduler")}
         >
           <Clock className="w-4 h-4 mr-2" />
           {t.schedule}
-        </Button>
+        </Button> */}
 
         <Button
           variant="outline"
