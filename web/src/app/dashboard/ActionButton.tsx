@@ -79,6 +79,7 @@ export default function Actions({
       setIsExporting(false);
     }
   };
+
   const exportAsFile = async (fileUrl: string, extension: "png" | "mp4") => {
     try {
       const fileName = generatedContent.caption
@@ -148,8 +149,7 @@ Shot ${index + 1}:
     route: "scheduler" | "editor" | "post" | "library"
   ) => {
     try {
-      // Create data for contentStorage (uses contentType)
-      const contentStorageData = {
+      const contentData = {
         caption: generatedContent.caption,
         hashtags: generatedContent.hashtags,
         imageUrl: generatedContent.imageUrl,
@@ -163,57 +163,28 @@ Shot ${index + 1}:
         }),
       };
 
-      // Create data for libraryService (needs type, status, engagement)
-      const libraryServiceData = {
-        id: Date.now().toString(),
-        caption: generatedContent.caption,
-        hashtags: generatedContent.hashtags,
-        imageUrl: generatedContent.imageUrl || "",
-        videoUrl: generatedContent.videoUrl || "",
-        platform,
-        type: contentType,
-        contentType: contentType,
-        title: title.trim(),
-        createdAt: new Date().toISOString(),
-        status: "draft",
-        engagement: {
-          likes: 0,
-          comments: 0,
-          views: 0,
-        },
-        ...(contentType === "video" && {
-          storyboard: generatedContent.storyboard,
-          overlays: generatedContent.overlays,
-        }),
-      };
-
       let id: string;
 
-      if (route === "library") {
-        // Use contentStorage for library
-        id = contentStorage.saveToLibrary(contentStorageData);
-        showToast("Content saved to library successfully!", "success");
-      } else if (route === "post") {
-        // Use libraryService only for post route
-        const currentContent = await libraryService.getLibraryContent();
-        const updatedContent = [...currentContent, libraryServiceData];
-        await libraryService.saveLibraryContent(updatedContent);
-        id = libraryServiceData.id;
-        showToast("Content saved successfully!", "success");
+      if (route === "library" || route === "post") {
+        // Save both Library and Post content under 'libraryContent'
+        id = contentStorage.saveToLibrary(contentData);
+        showToast(
+          route === "library"
+            ? "Content saved to library successfully!"
+            : "Content saved for posting successfully!",
+          "success"
+        );
+        if (route === "post") {
+          // Navigate to post page
+          router.push(`/post/${id}`);
+        }
       } else {
         // Use contentStorage for scheduler and editor
         const storageKeyMap = {
           scheduler: "schedulerContent" as const,
           editor: "editorContent" as const,
         };
-        id = contentStorage.saveContent(
-          storageKeyMap[route],
-          contentStorageData
-        );
-      }
-
-      // Navigate to the specific route
-      if (route !== "library") {
+        id = contentStorage.saveContent(storageKeyMap[route], contentData);
         router.push(`/${route}/${id}`);
       }
     } catch (error) {

@@ -120,6 +120,7 @@ export default function ContentListItem({
             </div>
 
             {/* Metadata */}
+            {/* Metadata */}
             <div className="flex flex-col sm:flex-row sm:items-center flex-wrap gap-2 sm:gap-4 text-xs sm:text-sm text-muted-foreground">
               <div className="flex items-center gap-1">
                 {item.platform === "instagram" ? (
@@ -143,18 +144,6 @@ export default function ContentListItem({
                 <Calendar className="w-3 h-3 sm:w-4 sm:h-4" />
                 {new Date(item.createdAt).toLocaleDateString()}
               </div>
-              {displayStatus === "published" && (
-                <>
-                  <div className="flex items-center gap-1">
-                    <Heart className="w-3 h-3 sm:w-4 sm:h-4" />
-                    {item.engagement.likes}
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <MessageCircle className="w-3 h-3 sm:w-4 sm:h-4" />
-                    {item.engagement.comments}
-                  </div>
-                </>
-              )}
             </div>
           </div>
 
@@ -185,7 +174,7 @@ export default function ContentListItem({
               size="sm"
               variant="ghost"
               onClick={() => onSchedule(item)}
-              title="schedule"
+              title="set reminder to post"
               className="flex justify-center p-2 flex-shrink-0"
             >
               <Clock className="w-4 h-4" />
