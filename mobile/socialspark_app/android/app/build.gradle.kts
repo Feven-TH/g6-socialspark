@@ -44,6 +44,6 @@ flutter {
     source = "../.."
 }
 dependencies {
-    // … your other deps …
+    // Add this line for desugaring support libraries
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
 }

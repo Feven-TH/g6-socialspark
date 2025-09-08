@@ -13,7 +13,8 @@ dependencies:
   go_router: ^14.2.0
   get_it: ^7.6.7
   flutter_bloc: ^9.0.0
-
+  video_player: ^2.9.1
+  chewie: ^1.7.5
   # UI
   cupertino_icons: ^1.0.8
   google_fonts: ^6.2.1
@@ -61,10 +62,10 @@ flutter:
   fonts:
     - family: Poppins
       fonts:
-        - asset: lib/assets/fonts/Poppins-Regular.ttf
-        - asset: lib/assets/fonts/Poppins-Medium.ttf
+        - asset: assets/fonts/Poppins-Regular.ttf
+        - asset: assets/fonts/Poppins-Medium.ttf
           weight: 500
-        - asset: lib/assets/fonts/Poppins-SemiBold.ttf
+        - asset: assets/fonts/Poppins-SemiBold.ttf
           weight: 600
-        - asset: lib/assets/fonts/Poppins-Bold.ttf
+        - asset: assets/fonts/Poppins-Bold.ttf
           weight: 700
