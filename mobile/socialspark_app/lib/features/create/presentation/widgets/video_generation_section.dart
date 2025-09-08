@@ -6,9 +6,9 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/network/api_client.dart';
-import '../../../create/data/datasources/create_remote_ds.dart';
-import '../../../create/data/models/brand_preset.dart';
-import '../../../create/data/models/task_status.dart';
+import '../../data/datasources/create_remote_ds.dart';
+import '../../data/models/brand_preset.dart';
+import '../../data/models/task_status.dart';
 
 class VideoGenerationSection extends StatefulWidget {
   const VideoGenerationSection({
@@ -48,16 +48,6 @@ class VideoGenerationSectionState extends State<VideoGenerationSection> {
   String? _videoUrl;
   String? _taskId;
   String? _lastPolledStatus; // QUEUED | READY | FAILED | SUCCESS etc.
-
-  // Add this method to get the generated content
-  Map<String, dynamic>? getGeneratedContent() {
-    if (_videoUrl == null) return null;
-    return {
-      'url': _videoUrl,
-      'taskId': _taskId,
-      'status': _lastPolledStatus,
-    };
-  }
 
   // UI toggles
   bool _noMusic = false; // frontend-only hint
@@ -130,6 +120,16 @@ class VideoGenerationSectionState extends State<VideoGenerationSection> {
     if (mounted) setState(() {});
   }
 
+  /// Expose last generated content for schedule, etc.
+  Map<String, dynamic>? getGeneratedContent() {
+    if (_videoUrl == null) return null;
+    return {
+      'url': _videoUrl,
+      'taskId': _taskId,
+      'status': _lastPolledStatus,
+    };
+  }
+
   /// Public: trigger the whole flow (storyboard → render → poll).
   Future<void> start() => _start();
 
@@ -149,7 +149,8 @@ class VideoGenerationSectionState extends State<VideoGenerationSection> {
     final idea = _ideaCtrl.text.trim().isEmpty
         ? '15s TikTok for wildlife conservation ad'
         : _ideaCtrl.text.trim();
-    final cta = _ctaCtrl.text.trim().isEmpty ? 'call and reserve' : _ctaCtrl.text.trim();
+    final cta =
+        _ctaCtrl.text.trim().isEmpty ? 'call and reserve' : _ctaCtrl.text.trim();
 
     try {
       // 1) Generate storyboard from idea (caption text can be used as idea)
@@ -181,7 +182,6 @@ class VideoGenerationSectionState extends State<VideoGenerationSection> {
     try {
       // Optional frontend-only hint: if "No music" is toggled, overwrite music field.
       if (_noMusic) {
-        // This only changes the payload we send; backend must decide how to handle it.
         storyboard = Map<String, dynamic>.from(storyboard);
         storyboard['music'] = 'none';
       }
@@ -286,10 +286,8 @@ class VideoGenerationSectionState extends State<VideoGenerationSection> {
   String _extractError(Object e) {
     if (e is DioException) {
       final data = e.response?.data;
-      // Prefer explicit backend error messages if present
       if (data is Map && data['detail'] != null) return data['detail'].toString();
       if (data is String && data.trim().isNotEmpty) {
-        // Show first part of HTML/text error responses too
         return data.length > 400 ? '${data.substring(0, 400)}…' : data;
       }
       return e.message ?? e.toString();
@@ -376,15 +374,24 @@ class VideoGenerationSectionState extends State<VideoGenerationSection> {
           ],
         ),
 
-        // Frontend-only hint to try "no music" (backend must handle 'none' gracefully)
+        // *** FIXED: Overflow-safe toggle row ***
         const SizedBox(height: 8),
         Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Switch(
               value: _noMusic,
               onChanged: (v) => setState(() => _noMusic = v),
             ),
-            const Text('Render without background music (frontend hint)'),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'Render without background music (frontend hint)',
+                maxLines: 2,
+                softWrap: true,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
           ],
         ),
 
@@ -393,7 +400,7 @@ class VideoGenerationSectionState extends State<VideoGenerationSection> {
           width: double.infinity,
           child: FilledButton.icon(
             icon: const Icon(Icons.movie_creation_outlined),
-            label: Text(_loading ? 'Generating…' : 'Generate Video'),
+            label: Text(_loading ? 'Generating…' : 'Generate'),
             onPressed: _loading ? null : _start,
           ),
         ),

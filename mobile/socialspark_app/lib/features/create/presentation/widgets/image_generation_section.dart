@@ -1,4 +1,3 @@
-
 import 'dart:async';
 import 'package:flutter/foundation.dart' as foundation;
 import 'package:dio/dio.dart';
@@ -36,8 +35,12 @@ class ImageGenerationSectionState extends State<ImageGenerationSection> {
   String? _taskId;
   String? _lastPolledStatus; // QUEUED | READY | FAILED | SUCCESS etc.
   String? _imageUrl;
+  TaskStatus? _status;
+  String? _error;
+  bool _loading = false;
+  bool _downloading = false;
 
-  // Add this method to get the generated content
+  // Expose for parent (scheduler button).
   Map<String, dynamic>? getGeneratedContent() {
     if (_imageUrl == null) return null;
     return {
@@ -46,12 +49,6 @@ class ImageGenerationSectionState extends State<ImageGenerationSection> {
       'status': _lastPolledStatus,
     };
   }
-  TaskStatus? _status;
-  String? _error;
-  bool _loading = false;
-  bool _downloading = false;
-
-  String get _aspectRatio => widget.initialPlatform == 'tiktok' ? '9:16' : '1:1';
 
   @override
   void initState() {
@@ -59,34 +56,49 @@ class ImageGenerationSectionState extends State<ImageGenerationSection> {
     _ds = CreateRemoteDataSource(ApiClient());
   }
 
-  Future<void> start() async {
+  // Convenience: uses the widget's initial props
+  Future<void> start() => startWith(
+        idea: widget.initialIdea,
+        platform: widget.initialPlatform,
+        brandPreset: widget.brandPreset,
+      );
+
+  // Preferred: call this with *current* values from the parent
+  Future<void> startWith({
+    required String idea,
+    required String platform,
+    required BrandPreset brandPreset,
+  }) async {
     setState(() {
       _loading = true;
       _error = null;
       _status = null;
       _taskId = null;
+      _imageUrl = null;
+      _lastPolledStatus = null;
     });
 
     try {
+      final aspect = _aspectFor(platform);
       final generatedPrompt = await _ds.startImageGeneration(
         ImageGenerationRequest(
-          prompt: widget.initialIdea,
+          prompt: idea,
           style: 'realistic',
-          aspectRatio: _aspectRatio,
-          brandPresets: widget.brandPreset,
-          platform: widget.initialPlatform,
+          aspectRatio: aspect,
+          brandPresets: brandPreset,
+          platform: platform,
         ),
       );
 
       final renderTaskId = await _ds.startImageRender(
         promptUsed: generatedPrompt,
         style: 'realistic',
-        aspectRatio: _aspectRatio,
-        platform: widget.initialPlatform,
+        aspectRatio: aspect,
+        platform: platform,
       );
 
       setState(() => _taskId = renderTaskId);
-      _pollStatus();
+      await _pollStatus();
     } catch (e) {
       setState(() {
         _loading = false;
@@ -94,6 +106,8 @@ class ImageGenerationSectionState extends State<ImageGenerationSection> {
       });
     }
   }
+
+  String _aspectFor(String platform) => platform == 'tiktok' ? '9:16' : '1:1';
 
   Future<void> _pollStatus() async {
     if (_taskId == null) return;
@@ -162,7 +176,7 @@ class ImageGenerationSectionState extends State<ImageGenerationSection> {
         final dir = await getApplicationDocumentsDirectory();
         final filename = 'socialspark_image_${DateTime.now().millisecondsSinceEpoch}.png';
         final savePath = '${dir.path}/$filename';
-        
+
         await dio.download(url, savePath);
 
         if (!mounted) return;
@@ -196,6 +210,11 @@ class ImageGenerationSectionState extends State<ImageGenerationSection> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        if (!_loading && _error == null && status == null)
+          Text(
+            'Tap Generate to create your image. We’ll show progress here.',
+            style: TextStyle(color: Colors.grey[700]),
+          ),
         if (_loading) const Center(child: CircularProgressIndicator()),
         if (_error != null) Text(_error!, style: const TextStyle(color: Colors.red)),
         if (status != null) ...[
