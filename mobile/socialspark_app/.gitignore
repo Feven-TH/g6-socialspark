@@ -43,3 +43,14 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+Add-Content mobile/socialspark_app/.gitignore @"
+# Flutter generated/ephemeral
+ios/Flutter/Generated.xcconfig
+ios/Flutter/flutter_export_environment.sh
+ios/Flutter/ephemeral/
+ios/.generated/
+linux/flutter/ephemeral/
+windows/flutter/ephemeral/
+# CocoaPods (if used)
+ios/Pods/
+"@
