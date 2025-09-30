@@ -171,6 +171,7 @@ This launches the Next.js app on the default development port.
 
 ---
 
+
 ## Contributing
 
 PRs and issues are welcome. Please open an issue first to discuss major changes.
@@ -186,3 +187,16 @@ MIT License. See [LICENSE](LICENSE) for details.
 ## Contact
 
 For inquiries or contributions, please use the repository Issues section.
+
+---
+## 👩‍💻 My Contributions (Feven-TH)
+
+In the SocialSpark V1 project, I contributed to the following features and improvements:
+
+- Implemented **direct publishing functionality** via AryShare for Instagram and Pinterest
+- Developed **scheduled posting functionality** using **Celery and Redis** to queue and execute posts at specified times
+- Integrated backend services to handle asynchronous tasks for posting and media processing
+- Ensured reliability and consistency of scheduled jobs with proper task management 
+
+**Original repository:** [A2SV/g6-socialspark](https://github.com/A2SV/g6-socialspark)
+
